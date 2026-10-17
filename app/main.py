@@ -598,23 +598,8 @@ async def pagina_principala(request: Request):
                         "Documentația: <a href='/docs'>/docs</a></p>")
 
 
-async def aplicatia_mobil(request: Request):
-    return FileResponse(DIR_STATIC / "app.html")
-
-
-async def service_worker(request: Request):
-    # servit din rădăcină, ca să poată controla și /app
-    return FileResponse(DIR_STATIC / "sw.js", media_type="application/javascript",
-                        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
-
-
-async def manifest(request: Request):
-    return FileResponse(DIR_STATIC / "manifest.webmanifest", media_type="application/manifest+json")
-
-
 def creeaza_aplicatia() -> Starlette:
-    rute = [Route("/", pagina_principala), Route("/app", aplicatia_mobil), Route("/sw.js", service_worker),
-            Route("/manifest.webmanifest", manifest), *api.rute, *api.rute_documentatie()]
+    rute = [Route("/", pagina_principala), *api.rute, *api.rute_documentatie()]
     if DIR_STATIC.exists():
         rute.append(Mount("/static", StaticFiles(directory=DIR_STATIC), name="static"))
     return Starlette(

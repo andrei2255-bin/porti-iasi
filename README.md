@@ -241,4 +241,3 @@ simulatorul, faptul că modelul bate metodele simple, scenariile, bucla de înv�
 - **Vremea nu se descarcă**: serverul merge și fără; marchează vremea ca estimată.
 - **După actualizarea scikit-learn**, modelul salvat se reantrenează automat la pornire.
 - **Pagina arată „simulare locală”** deși serverul merge: deschideți pagina de la `http://localhost:8000`, nu ca fișier.
-# porti-iasi
