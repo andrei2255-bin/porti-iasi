@@ -1,0 +1,9 @@
+{
+  "_nota": "EXEMPLE. Înlocuiți cu evenimente reale din Iași (meciuri, concerte, festivaluri, slujbe mari). porti = porțile la care vin mașini în plus; masini_in_plus = câte mașini în plus la FIECARE poartă. Orele în format HH:MM. După modificare, reporniți serverul.",
+  "evenimente": [
+    {"zi": "2026-10-21", "nume": "Meci de fotbal (exemplu)", "start": "19:00", "final": "21:00",
+     "porti": ["copou", "pacurari"], "masini_in_plus": 90},
+    {"zi": "2026-10-23", "nume": "Concert în centru (exemplu)", "start": "20:00", "final": "23:00",
+     "porti": ["dancu", "bucium"], "masini_in_plus": 60}
+  ]
+}

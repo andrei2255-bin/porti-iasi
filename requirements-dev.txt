@@ -1,0 +1,5 @@
+# Pentru teste:  pip install -r requirements-dev.txt   apoi   pytest
+-r requirements.txt
+pytest>=8
+httpx>=0.27
+pillow>=10

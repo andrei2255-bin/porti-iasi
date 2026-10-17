@@ -1,0 +1,14 @@
+# Pus online pe Render (render.com): New + > Blueprint > alegeți repository-ul de pe GitHub.
+services:
+  - type: web
+    name: portile-iasului
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PORTI_ZILE_ISTORIC
+        value: "120"

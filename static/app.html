@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E4C96">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Porțile Iașului">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<title>Porțile Iașului</title>
+<style>
+:root{--bg:#F3F5F8;--surface:#fff;--surface-2:#E7ECF2;--ink:#0C1A2B;--muted:#526174;--line:#D5DDE7;
+  --sign:#0E4C96;--sign-ink:#fff;--amber:#FFB000;--amber-soft:#FFF0C7;--amber-ink:#2A1C00;
+  --free:#1B8F55;--mid:#C98A0B;--full:#CC3B3B;--r:14px;
+  --f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"SFMono-Regular",Menlo,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#09111B;--surface:#101B29;--surface-2:#172435;--ink:#E5ECF4;--muted:#93A3B7;--line:#223247;
+  --sign:#5A9BEB;--sign-ink:#06111F;--amber-soft:#3A2D0E;--free:#3CC27F;--mid:#E5A83A;--full:#F06A6A}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f);-webkit-tap-highlight-color:transparent}
+body{min-height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px}
+.ps{width:32px;height:32px;border-radius:7px;background:var(--sign);color:var(--sign-ink);display:grid;place-items:center;font-weight:900;font-size:1.1rem;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 3.5px var(--sign-ink)}
+header b{font-size:1.1rem;font-weight:800}
+header button{margin-left:auto;background:none;border:0;color:var(--sign);font:inherit;font-weight:700;padding:6px}
+main{flex:1;padding:4px 16px 110px;display:flex;flex-direction:column;gap:12px;max-width:560px;width:100%;margin:0 auto}
+.card{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+select,input{width:100%;font:inherit;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.plate{font-family:var(--mono);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sw{width:50px;height:30px;border-radius:99px;background:var(--surface-2);border:0;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.sw[aria-checked=true]{background:var(--sign)}.sw[aria-checked=true]::after{left:23px}
+.btn{border:0;border-radius:14px;padding:15px;font:inherit;font-weight:800;background:var(--sign);color:var(--sign-ink);width:100%}
+.btn.alt{background:var(--surface-2);color:var(--ink)}.btn.amb{background:var(--amber);color:var(--amber-ink)}
+.btn:disabled{opacity:.45}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:600;color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--sign);border-color:var(--sign);color:var(--sign-ink)}
+.gate{background:var(--sign);color:var(--sign-ink);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.gate h2{margin:0;font-size:1.5rem}.big{font-size:2.3rem;font-weight:900;line-height:1}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}.bar span{display:block;height:100%}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp>div{background:var(--surface);border-radius:var(--r);padding:12px}
+.cmp .win{box-shadow:inset 0 0 0 2px var(--free)}
+.cmp .t{font-size:1.6rem;font-weight:900}.small{font-size:.82rem;color:var(--muted)}
+.ai{display:flex;gap:10px;background:var(--amber-soft);border-radius:var(--r);padding:12px;font-size:.88rem}
+.ai b{font-family:var(--mono);font-size:.7rem;background:var(--amber);color:var(--amber-ink);border-radius:4px;padding:1px 5px;height:fit-content}
+.leg{display:flex;justify-content:space-between;font-size:.9rem;padding:5px 0;border-bottom:1px solid var(--line)}.leg:last-child{border:0}
+.cd{font-family:var(--mono);font-size:2.6rem;font-weight:700;text-align:center}
+.chk{display:flex;gap:10px;align-items:center;opacity:.3;transition:.3s}.chk.ok{opacity:1}
+.chk i{width:22px;height:22px;border-radius:50%;background:var(--free);color:#fff;display:grid;place-items:center;font-style:normal;font-size:.75rem}
+.list .g{display:grid;grid-template-columns:90px 1fr 74px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.list .g:last-child{border:0}.mini{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}.mini span{display:block;height:100%}
+.err{color:var(--full);font-size:.88rem}
+.status{font-size:.75rem;color:var(--muted);text-align:center}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:12px 0 14px;font:inherit;font-size:.8rem;font-weight:700;color:var(--muted)}
+nav button[aria-current=true]{color:var(--sign)}
+nav svg{display:block;margin:0 auto 3px;width:22px;height:22px}
+</style>
+</head>
+<body>
+<header><span class="ps">P</span><b id="titlu">Porțile Iașului</b><button id="inapoi" hidden>Înapoi</button></header>
+<main id="ecran"></main>
+<nav>
+  <button data-tab="drum" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 22l8-5 8 5z"/></svg>Drum</button>
+  <button data-tab="porti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 16V8h3a2.5 2.5 0 0 1 0 5h-3"/></svg>Porți</button>
+  <button data-tab="eu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Eu</button>
+</nav>
+<script>
+/* Aplicația pentru șoferi. Vorbește cu backendul de pe același server (sau ?api=http://adresa:8000). */
+const API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
+const ORIGINI = ['Lețcani / Podu Iloaiei','Târgu Frumos','Miroslava','Ciurea / Lunca Cetățuii','Bârnova / Vaslui','Holboca / Tomești','Rediu / Botoșani'];
+const DEST = ['Piața Unirii','Palas','UAIC (Copou)','Spitalul Sf. Spiridon','Gara','Tătărași'];
+const ORE = [['acum',null],['07:30',450],['08:30',510],['13:00',780],['17:30',1050]];
+const mem = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('pi_' + k)); localStorage.setItem('pi_' + k, JSON.stringify(v)); } catch(e){ return null; } };
+const S = { tab:'drum', pas:'form', oi: mem('oi') ?? 0, di: mem('di') ?? 0, abon: mem('abon') ?? true, plate: mem('plate') || 'IS 23 OKC',
+            ora: mem('ora') ?? 510, rec:null, rez:null, rezEnd:0, intrare:null, err:'', istoric: mem('istoric') || [] };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = m => String(Math.floor(m/60)%24).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+const culoare = o => o >= .93 ? 'var(--full)' : o >= .75 ? 'var(--mid)' : 'var(--free)';
+const tParam = () => S.ora == null ? '' : `t=${S.ora}`;
+
+async function api(cale, corp){
+  const r = await fetch(API_BASE + cale, corp ? { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corp) } : {});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || 'Serverul nu răspunde (' + r.status + ')');
+  return d;
+}
+function seteaza(ce){ Object.assign(S, ce); deseneaza(); }
+
+/* ---------- ecrane ---------- */
+function vForm(){
+  return `<div class="card"><span class="small">Unde mergi azi?</span>
+    <label for="ori">Vin dinspre</label><select id="ori">${ORIGINI.map((o,i)=>`<option value="${i}" ${i==S.oi?'selected':''}>${o}</option>`).join('')}</select>
+    <label for="dst">Merg la</label><select id="dst">${DEST.map((d,i)=>`<option value="${i}" ${i==S.di?'selected':''}>${d}</option>`).join('')}</select>
+    <div class="row"><span>Am abonament CTP</span><button class="sw" role="switch" aria-checked="${S.abon}" data-a="abon" aria-label="Am abonament CTP"></button></div></div>
+  <div class="card"><label>Ora (demo)</label><div class="chips">${ORE.map(([n,t])=>`<button class="chip" data-ora="${t}" aria-pressed="${S.ora===t}">${n}</button>`).join('')}</div></div>
+  ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+  <button class="btn" data-a="cauta">Găsește poarta</button>`;
+}
+function vRec(){
+  const r = S.rec, g = r.gate, win = r.pr <= r.car, p = r.prognoza;
+  return `${r.redirected?`<div class="ai"><b>AI</b><span>P+R ${esc(r.redirected.nume)} va fi plină când ajungi. Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.</span></div>`
+     : p?`<div class="ai"><b>AI</b><span>Când ajungi (${esc(p.ora_sosire_text)}), estimăm ~${p.libere_la_sosire} locuri libere.</span></div>`:''}
+  <div class="gate"><span class="small" style="color:inherit;opacity:.85">Poarta recomandată · ${esc(g.dir)}</span>
+    <div class="row"><h2>P+R ${esc(g.nume)}</h2><div style="text-align:right"><div class="big">${g.libere}</div><span style="font-size:.75rem;opacity:.85">libere din ${g.loc}</span></div></div>
+    <div class="bar"><span style="width:${g.ocupare*100}%;background:${g.ocupare>=.93?'#FF8A80':g.ocupare>=.75?'#FFD166':'#7BE3A8'}"></span></div></div>
+  <div class="cmp"><div class="${win?'win':''}"><span class="small">Prin poartă</span><div class="t">${r.pr} min</div><span class="small">${S.abon?'parcare gratuită':'bilet P+R 8 lei'} · ~${r.prCost} lei</span></div>
+    <div class="${win?'':'win'}"><span class="small">Cu mașina în centru</span><div class="t">${r.car} min</div><span class="small">~${r.search} min cauți loc · ~${r.carCost} lei</span></div></div>
+  <div class="card">
+    <div class="leg"><span>Condu până la ${esc(g.nume)}</span><b>${r.legs.toGate} min</b></div>
+    <div class="leg"><span>Parchezi, mergi la stație</span><b>${r.legs.walk} min</b></div>
+    <div class="leg"><span>Aștepți CTP (la ~${r.headway} min)</span><b>${r.legs.wait} min</b></div>
+    <div class="leg"><span>Cu CTP până la ${esc(r.dname)}</span><b>${r.legs.ride} min</b></div>
+    <div class="leg"><span>Pe jos</span><b>${r.legs.last} min</b></div></div>
+  <button class="btn" data-a="laRez">Rezervă un loc la ${esc(g.nume)}</button>`;
+}
+function vRez(){
+  if (!S.rez) return `<div class="card"><label for="plate">Numărul mașinii</label><input id="plate" class="plate" value="${esc(S.plate)}" autocomplete="off" autocapitalize="characters">
+    <span class="small">Camera de la barieră recunoaște numărul. Nu ai nevoie de bilet.</span>${S.err?`<span class="err">${esc(S.err)}</span>`:''}</div>
+    <div class="card"><div class="row"><span>Loc păstrat</span><b>20 min</b></div><div class="row"><span>Tarif</span><b>${S.abon?'Gratuit (abonament)':'8 lei · bilet P+R'}</b></div></div>
+    <button class="btn" data-a="rezerva">Confirmă rezervarea</button>`;
+  return `<div class="gate"><span class="small" style="color:inherit;opacity:.85">Rezervare ${esc(S.rez.id)}</span><h2>Loc păstrat la P+R ${esc(S.rec.gate.nume)}</h2><span class="plate">${esc(S.rez.plate)}</span></div>
+    <div class="card"><span class="small" style="text-align:center">Locul tău e păstrat încă</span><div class="cd" id="cd">20:00</div></div>
+    ${S.prog?`<div class="ai"><b>AI</b><span>${esc(S.prog)}</span></div>`:''}
+    <button class="btn amb" data-a="ajuns">Am ajuns la barieră</button>`;
+}
+function vBariera(){
+  const e = S.intrare;
+  return `<div class="card">
+    <div class="chk" id="c1"><i>✓</i><span>Număr recunoscut: <b class="plate">${esc(e.numar)}</b></span></div>
+    <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Abonament CTP valid':'Bilet P+R plătit'}</span></div>
+    <div class="chk" id="c3"><i>✓</i><span>${e.permis===false?esc(e.mesaj):'Bariera se ridică'}</span></div>
+    ${e.sector?`<div class="chk" id="c4"><i>✓</i><span>Loc: sector ${esc(e.sector)}, locul ${e.loc}</span></div>`:''}</div>
+    <button class="btn" data-a="gata" id="gata" disabled>Spre stația CTP</button>`;
+}
+function vGata(){
+  const r = S.rec, castig = Math.max(0, r.car - r.pr), bani = Math.max(0, r.carCost - r.prCost);
+  return `<div class="card" style="text-align:center"><span class="small">Următoarea cursă CTP spre ${esc(r.dname)}</span><div class="cd">~${r.legs.wait} min</div><span class="small">stația ${esc(r.gate.nume)} · 3 min pe jos</span></div>
+    <div class="cmp"><div><div class="t">${castig?castig+' min':'—'}</div><span class="small">mai repede decât cu mașina</span></div><div><div class="t">${bani} lei</div><span class="small">economisiți azi</span></div></div>
+    <div class="card"><span class="small">Seara, mașina te așteaptă la sector ${esc(S.intrare.sector||'-')}. La ieșire bariera se ridică singură.</span></div>
+    <button class="btn alt" data-a="restart">Alt drum</button>`;
+}
+async function vPorti(){
+  const t = tParam();
+  const [porti, f] = await Promise.all([api('/api/gates?' + t), api('/api/forecast?' + t).catch(() => null)]);
+  return `<div class="card list"><div class="row"><b>Locuri libere acum</b><span class="small">${S.ora==null?'ora reală':fmt(S.ora)}</span></div>
+    ${porti.map(g => { const se = f && f.porti[g.id].se_umple_la; return `<div class="g"><b>${esc(g.nume)}</b>
+      <div><div class="mini"><span style="width:${g.ocupare*100}%;background:${culoare(g.ocupare)}"></span></div>${se?`<span class="small">se umple ~${fmt(se)}</span>`:''}</div>
+      <span style="text-align:right"><b>${g.libere}</b><span class="small"> / ${g.loc}</span></span></div>`; }).join('')}</div>
+    ${f && f.alerte.length ? f.alerte.slice(0,2).map(a => `<div class="ai"><b>AI</b><span>${esc(a.mesaj)}</span></div>`).join('') : ''}
+    <button class="btn alt" data-a="refresh">Actualizează</button>`;
+}
+function vEu(){
+  const tot = S.istoric.reduce((a, x) => ({ min: a.min + x.min, lei: a.lei + x.lei, co2: a.co2 + x.co2 }), { min:0, lei:0, co2:0 });
+  return `<div class="card"><label for="plate2">Numărul mașinii mele</label><input id="plate2" class="plate" value="${esc(S.plate)}">
+    <div class="row"><span>Am abonament CTP</span><button class="sw" role="switch" aria-checked="${S.abon}" data-a="abon" aria-label="Am abonament CTP"></button></div></div>
+  <div class="cmp"><div><div class="t">${S.istoric.length}</div><span class="small">drumuri prin porți</span></div><div><div class="t">${tot.lei} lei</div><span class="small">economisiți</span></div>
+    <div><div class="t">${tot.min} min</div><span class="small">câștigate</span></div><div><div class="t">${tot.co2.toFixed(1).replace('.',',')} kg</div><span class="small">CO₂ în minus</span></div></div>
+  <p class="status">Datele de mai sus rămân doar pe acest telefon.</p>`;
+}
+
+async function deseneaza(){
+  const el = $('#ecran'), titluri = { form:'Porțile Iașului', rec:'Recomandarea ta', rez:'Rezervare', bariera:'La barieră', gata:'Drum bun!' };
+  $('#inapoi').hidden = !(S.tab === 'drum' && (S.pas === 'rec' || (S.pas === 'rez' && !S.rez)));
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === S.tab));
+  if (S.tab === 'porti'){ $('#titlu').textContent = 'Porțile acum'; el.innerHTML = '<p class="status">Se încarcă…</p>';
+    try { el.innerHTML = await vPorti(); } catch(e){ el.innerHTML = `<p class="err">${esc(e.message)}</p>`; } return; }
+  if (S.tab === 'eu'){ $('#titlu').textContent = 'Contul meu'; el.innerHTML = vEu(); return; }
+  $('#titlu').textContent = titluri[S.pas];
+  el.innerHTML = ({ form:vForm, rec:vRec, rez:vRez, bariera:vBariera, gata:vGata })[S.pas]();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- acțiuni ---------- */
+document.addEventListener('change', e => {
+  if (e.target.id === 'ori') mem('oi', S.oi = +e.target.value);
+  if (e.target.id === 'dst') mem('di', S.di = +e.target.value);
+  if (e.target.id === 'plate2') mem('plate', S.plate = e.target.value.toUpperCase());
+});
+document.addEventListener('click', async e => {
+  const nav = e.target.closest('nav button'); if (nav) return seteaza({ tab: nav.dataset.tab });
+  if (e.target.id === 'inapoi') return seteaza({ pas: S.pas === 'rez' ? 'rec' : 'form', err:'' });
+  const ch = e.target.closest('[data-ora]'); if (ch){ const v = ch.dataset.ora === 'null' ? null : +ch.dataset.ora; mem('ora', v); return seteaza({ ora: v }); }
+  const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const a = b.dataset.a;
+  try {
+    if (a === 'abon'){ mem('abon', S.abon = !S.abon); deseneaza(); }
+    if (a === 'refresh') deseneaza();
+    if (a === 'cauta'){ b.disabled = true; b.textContent = 'Caut…';
+      const rec = await api('/api/recommend', { origine:S.oi, destinatie:S.di, abonament:S.abon, ...(S.ora!=null && { t:S.ora }) });
+      seteaza({ rec, pas:'rec', err:'' }); }
+    if (a === 'laRez') seteaza({ pas:'rez', rez:null, err:'' });
+    if (a === 'rezerva'){ const numar = $('#plate').value.toUpperCase().trim(); mem('plate', S.plate = numar);
+      const rez = await api('/api/reservations', { poarta:S.rec.gate.id, numar, abonament:S.abon, ...(S.ora!=null && { t:S.ora }) });
+      let prog = '';
+      try { const f = await api(`/api/gates/${S.rec.gate.id}/forecast?` + tParam());
+        prog = f.se_umple_la_text ? `Predicție: P+R ${S.rec.gate.nume} se umple în jurul orei ${f.se_umple_la_text}. Locul tău rămâne păstrat.` : `Predicție: P+R ${S.rec.gate.nume} nu se umple în următoarele ore.`; } catch(_){}
+      seteaza({ rez, prog, rezEnd: Date.now() + 20*60000, err:'' }); }
+    if (a === 'ajuns'){ const ora = S.ora == null ? null : S.ora + S.rec.legs.toGate;
+      const intrare = await api('/api/gate-events', { numar:S.rez.plate, poarta:S.rec.gate.id, tip:'intrare', ...(ora!=null && { t:ora }) });
+      seteaza({ intrare, pas:'bariera' });
+      ['c1','c2','c3','c4'].forEach((id, i) => setTimeout(() => { $('#'+id)?.classList.add('ok'); if (i === 3 || (i === 2 && !intrare.sector)) { const g = $('#gata'); if (g) g.disabled = intrare.permis === false; } }, 400 + i*500)); }
+    if (a === 'gata'){ const r = S.rec;
+      S.istoric.push({ min: Math.max(0, r.car - r.pr), lei: Math.max(0, r.carCost - r.prCost), co2: r.co2 }); mem('istoric', S.istoric.slice(-200));
+      seteaza({ pas:'gata' }); }
+    if (a === 'restart') seteaza({ pas:'form', rec:null, rez:null, intrare:null });
+  } catch(err){ seteaza({ err: err.message }); }
+});
+setInterval(() => { const cd = $('#cd'); if (!cd || !S.rez) return; const r = Math.max(0, S.rezEnd - Date.now());
+  cd.textContent = String(Math.floor(r/60000)).padStart(2,'0') + ':' + String(Math.floor(r/1000)%60).padStart(2,'0'); }, 1000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+deseneaza();
+</script>
+</body>
+</html>

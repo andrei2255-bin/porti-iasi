@@ -1,0 +1,11 @@
+{
+  "_nota": "Perioade APROXIMATIVE de vacanță școlară, folosite de simulator și de model. Verificați structura anului școlar pe site-ul Ministerului Educației și corectați datele. După modificare, reporniți serverul.",
+  "perioade": [
+    ["2025-12-20", "2026-01-07"],
+    ["2026-02-14", "2026-02-22"],
+    ["2026-04-04", "2026-04-14"],
+    ["2026-06-20", "2026-09-06"],
+    ["2026-10-24", "2026-11-01"],
+    ["2026-12-19", "2027-01-06"]
+  ]
+}

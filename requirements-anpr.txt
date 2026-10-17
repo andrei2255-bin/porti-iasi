@@ -1,0 +1,13 @@
+# Recunoașterea numerelor din poze (opțional). Fără ea, restul serverului merge normal.
+#
+# Varianta recomandată: rețele neuronale, merge și pe poze reale făcute cu telefonul.
+# La prima folosire descarcă modelele (câteva zeci de MB), deci aveți nevoie de internet o dată.
+fast-alpr[onnx]
+opencv-python-headless
+#
+# Varianta de rezervă (folosită automat dacă fast-alpr lipsește): merge pe poze clare, din față.
+# Pe lângă pachetul de mai jos, trebuie instalat programul Tesseract:
+#   Windows: https://github.com/UB-Mannheim/tesseract/wiki   (bifați „Add to PATH”)
+#   macOS:   brew install tesseract
+#   Linux:   sudo apt install tesseract-ocr
+pytesseract

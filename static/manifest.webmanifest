@@ -1,0 +1,16 @@
+{
+  "name": "Porțile Iașului",
+  "short_name": "Porțile Iași",
+  "description": "Park & Ride în Iași: lasă mașina la poarta orașului și intră cu CTP.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F5F8",
+  "theme_color": "#0E4C96",
+  "lang": "ro",
+  "icons": [
+    {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}

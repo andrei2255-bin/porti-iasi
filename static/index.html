@@ -1,0 +1,975 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Porțile Iașului</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800;900&family=Public+Sans:wght@400;500;600;700&family=Overpass+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&display=swap">
+<style>
+/* Layout: site de promovare. Hero cu panoul LED de la intrarea în oraș; problemă → soluție (schema porților) → demo (aplicație + dispecerat) → impact → plan.
+   Limbaj vizual: indicatoare rutiere (albastru de indicator, Overpass = familia Highway Gothic) + LED ambră pentru panourile de pe drum. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface-2:#E7ECF2; --ink:#0C1A2B; --muted:#526174; --line:#D5DDE7;
+  --sign:#0E4C96; --sign-soft:#DCE8F7; --sign-ink:#FFFFFF;
+  --amber:#FFB000; --amber-soft:#FFF0C7; --amber-ink:#2A1C00;
+  --free:#1B8F55; --mid:#C98A0B; --full:#CC3B3B;
+  --led-bg:#0B0D10; --led-on:#FFB000; --led-off:#2A2416; --led-frame:#1E232B;
+  --phone:#121821;
+  --f-display:"Overpass","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Overpass Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-led:"Doto","Overpass Mono",ui-monospace,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#09111B; --surface:#101B29; --surface-2:#172435; --ink:#E5ECF4; --muted:#93A3B7; --line:#223247;
+  --sign:#5A9BEB; --sign-soft:#15304F; --sign-ink:#06111F;
+  --amber:#FFC23D; --amber-soft:#3A2D0E; --amber-ink:#2A1C00;
+  --free:#3CC27F; --mid:#E5A83A; --full:#F06A6A; --phone:#000000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#09111B; --surface:#101B29; --surface-2:#172435; --ink:#E5ECF4; --muted:#93A3B7; --line:#223247;
+  --sign:#5A9BEB; --sign-soft:#15304F; --sign-ink:#06111F;
+  --amber:#FFC23D; --amber-soft:#3A2D0E; --amber-ink:#2A1C00;
+  --free:#3CC27F; --mid:#E5A83A; --full:#F06A6A; --phone:#000000; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-weight:900;font-size:clamp(2.3rem,5.6vw,4.3rem)}
+h2{font-weight:800;font-size:clamp(1.7rem,3.4vw,2.6rem)}
+h3{font-weight:800;font-size:1.2rem}
+p{margin:0}
+a{color:var(--sign)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2.5px solid var(--sign);outline-offset:2px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.small{font-size:.85rem}
+.tiny{font-size:.74rem}
+.src{font-size:.78rem;color:var(--muted)}
+.src a{color:inherit}
+
+/* NAV */
+nav.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:18px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:20;border-bottom:1px solid transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--bg)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-family:var(--f-display);font-weight:900;font-size:1.15rem}
+.psign{width:34px;height:34px;border-radius:7px;background:var(--sign);color:var(--sign-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:1.25rem;box-shadow:inset 0 0 0 2.5px var(--sign),inset 0 0 0 4px var(--sign-ink)}
+nav.top ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;flex-wrap:wrap;align-items:center}
+nav.top ul a{color:var(--muted);text-decoration:none;font-weight:600;font-size:.93rem}
+nav.top ul a:hover{color:var(--ink)}
+nav.top .navcta{background:var(--sign);color:var(--sign-ink);padding:8px 16px;border-radius:999px}
+nav.top .navcta:hover{color:var(--sign-ink)}
+
+/* HERO */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:52px;align-items:center;padding-block:36px 64px}
+.hero-l{display:flex;flex-direction:column;gap:24px;min-width:0}
+.hero .lede{font-size:1.2rem;color:var(--muted);max-width:50ch}
+.hero h1 .hl{color:var(--sign)}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 24px;font-weight:700;text-decoration:none;border:0}
+.btn-p{background:var(--sign);color:var(--sign-ink)}
+.btn-g{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.hero-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* LED PANEL */
+.vms{background:var(--led-frame);border-radius:10px;padding:14px;box-shadow:0 30px 50px -25px rgba(5,15,30,.55);position:relative}
+.vms::before,.vms::after{content:"";position:absolute;bottom:-46px;width:10px;height:46px;background:var(--led-frame)}
+.vms::before{left:22%}.vms::after{right:22%}
+.vms-in{background:var(--led-bg);border-radius:4px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;
+  background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px);background-size:6px 6px}
+.vms-head{display:flex;align-items:center;gap:12px}
+.vms-p{width:46px;height:46px;border-radius:6px;background:#1158B8;color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:1.7rem;box-shadow:inset 0 0 0 3px #1158B8,inset 0 0 0 5px #fff;flex:none}
+.led{font-family:var(--f-led);color:var(--led-on);text-shadow:0 0 6px rgba(255,176,0,.55);letter-spacing:.06em;font-weight:800;text-transform:uppercase;line-height:1.15}
+.led-l{font-size:clamp(1.15rem,2.3vw,1.6rem)}
+.led-row{display:flex;justify-content:space-between;gap:12px;font-size:clamp(.95rem,1.9vw,1.25rem);border-top:1px dashed var(--led-off);padding-top:9px}
+.led-row span:last-child{white-space:nowrap}
+.led.g{color:#57E38F;text-shadow:0 0 6px rgba(87,227,143,.5)}
+.led.r{color:#FF6B5A;text-shadow:0 0 6px rgba(255,107,90,.5)}
+.vms-cap{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;color:var(--muted);padding-top:52px;flex-wrap:wrap}
+.vms-dots{display:flex;gap:6px}
+.vms-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.vms-dots i.on{background:var(--amber)}
+
+/* SECTIONS */
+section.blk{padding-block:72px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:32px}
+.head2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:40px;align-items:end}
+.head2>div{display:flex;flex-direction:column;gap:12px;min-width:0}
+.lead{color:var(--muted);font-size:1.08rem;max-width:62ch}
+
+/* PROBLEM */
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:3px solid var(--ink)}
+.fact{padding:20px 20px 4px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fact+.fact{padding-left:20px;border-left:1px solid var(--line)}
+.fact b{font-family:var(--f-display);font-weight:900;font-size:clamp(2rem,3.6vw,2.9rem);line-height:1;font-variant-numeric:tabular-nums}
+.fact p{color:var(--muted);font-size:.95rem}
+.quote{font-family:var(--f-display);font-weight:800;font-size:clamp(1.3rem,2.6vw,1.85rem);line-height:1.25;max-width:34ch;border-left:5px solid var(--amber);padding-left:20px}
+.quote span{display:block;font-family:var(--f-body);font-weight:500;font-size:.9rem;color:var(--muted);margin-top:8px}
+
+/* SOLUTION */
+.sol{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:40px;align-items:start}
+.mapbox{background:var(--surface);border-radius:var(--r);padding:12px;min-width:0}
+.mapbox svg{width:100%;height:auto;display:block}
+.steps{display:flex;flex-direction:column;gap:0;min-width:0}
+.step{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.step:first-child{padding-top:0}
+.step .k{width:48px;height:48px;border-radius:50%;background:var(--sign);color:var(--sign-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:1.3rem}
+.step div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.step p{color:var(--muted)}
+.rule{background:var(--amber-soft);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.rule b{font-family:var(--f-display);font-size:1.15rem}
+
+/* MAP SVG */
+.m-road{stroke:var(--line);stroke-width:5;fill:none;stroke-linecap:round}
+.m-roadlbl{fill:var(--muted);font:600 13px var(--f-body)}
+.m-line{stroke:var(--sign);stroke-width:4;fill:none;stroke-dasharray:1 9;stroke-linecap:round}
+.m-ring{stroke:var(--line);stroke-width:2;fill:none;stroke-dasharray:4 6}
+.m-center{fill:var(--ink)}
+.m-centerlbl{fill:var(--ink);font:800 13px var(--f-display)}
+.m-gate rect{fill:var(--sign)}
+.m-gate text.p{fill:var(--sign-ink);font:900 14px var(--f-display)}
+.m-gate text.n{fill:var(--ink);font:800 16px var(--f-display)}
+.m-gate text.o{font:700 13px var(--f-mono)}
+.m-gate{cursor:pointer}
+.m-gate.sel rect{stroke:var(--amber);stroke-width:4}
+.anim .m-line{animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-20}}
+
+/* DEMO */
+.tabs{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:4px;gap:4px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:9px 18px;font-weight:700;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.simbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--surface);border-radius:var(--r);padding:12px 16px}
+.simbar .clock{font-family:var(--f-mono);font-weight:700;font-size:1.5rem;font-variant-numeric:tabular-nums;min-width:4.2ch}
+.simbar input[type=range]{flex:1;min-width:160px;accent-color:var(--sign)}
+.simbar .play{width:40px;height:40px;border-radius:50%;border:0;background:var(--sign);color:var(--sign-ink);display:grid;place-items:center}
+.simbar .play svg{width:16px;height:16px}
+.preset{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.82rem;font-weight:600}
+.srv{margin-left:auto;font-size:.76rem;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.srv::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.srv.on{background:color-mix(in srgb,var(--free) 18%,transparent);color:var(--free)}
+
+.demo-driver{display:grid;grid-template-columns:auto minmax(0,1fr);gap:48px;align-items:start}
+.phone{width:370px;height:760px;border-radius:44px;background:var(--phone);padding:11px;box-shadow:0 30px 60px -25px rgba(5,15,30,.5)}
+.scr{width:100%;height:100%;border-radius:34px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.sbar{display:flex;justify-content:space-between;padding:12px 24px 2px;font-size:.76rem;font-weight:700;font-variant-numeric:tabular-nums}
+.ahead{display:flex;align-items:center;gap:10px;padding:8px 18px 10px}
+.ahead .psign{width:28px;height:28px;font-size:1rem;border-radius:6px}
+.ahead b{font-family:var(--f-display);font-weight:900;font-size:1.05rem}
+.ahead .back{margin-left:auto;background:none;border:0;color:var(--sign);font-weight:700;font-size:.85rem;padding:4px}
+.abody{flex:1;overflow-y:auto;padding:4px 16px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.card{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+select,input[type=text]{width:100%;font:inherit;font-size:.92rem;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.plate{font-family:var(--f-mono);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.9rem;font-weight:600}
+.sw{width:46px;height:26px;border-radius:99px;background:var(--surface-2);border:0;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s}
+.sw[aria-checked="true"]{background:var(--sign)}
+.sw[aria-checked="true"]::after{left:23px}
+.pb{border:0;border-radius:12px;padding:13px;font-weight:800;background:var(--sign);color:var(--sign-ink);width:100%;font-family:var(--f-display);font-size:1rem}
+.pb.alt{background:var(--surface-2);color:var(--ink)}
+.pb.amb{background:var(--amber);color:var(--amber-ink)}
+.gatecard{background:var(--sign);color:var(--sign-ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.gatecard .row{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.gatecard h3{font-size:1.4rem}
+.gatecard .free{font-family:var(--f-display);font-weight:900;font-size:2.2rem;line-height:1}
+.occbar{height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
+.occbar span{display:block;height:100%;border-radius:99px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp>div{background:var(--surface);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cmp>div.win{box-shadow:inset 0 0 0 2px var(--free)}
+.cmp .t{font-family:var(--f-display);font-weight:900;font-size:1.6rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.cmp .l{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.cmp .d{font-size:.78rem;color:var(--muted);line-height:1.35}
+.ai{display:flex;gap:10px;background:var(--amber-soft);border-radius:var(--r);padding:12px;font-size:.84rem;line-height:1.4}
+.ai b{font-family:var(--f-mono);font-size:.7rem;background:var(--amber);color:var(--amber-ink);border-radius:4px;padding:1px 5px;height:fit-content;flex:none;margin-top:1px}
+.legs{display:flex;flex-direction:column;gap:0}
+.leg{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.86rem;padding:6px 0;position:relative}
+.leg i{width:14px;height:14px;border-radius:50%;border:3px solid var(--sign);background:var(--surface);justify-self:center;z-index:1}
+.leg:not(:last-child)::before{content:"";position:absolute;left:10px;top:20px;bottom:-8px;width:2px;background:var(--line)}
+.leg b{font-variant-numeric:tabular-nums}
+.qr{width:150px;height:150px;align-self:center;background:#fff;padding:8px;border-radius:10px}
+.cd{font-family:var(--f-mono);font-weight:700;font-size:2.4rem;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.barrier{height:150px;background:var(--surface);border-radius:var(--r);position:relative;overflow:hidden}
+.barrier .post{position:absolute;left:30px;bottom:24px;width:22px;height:70px;background:var(--ink);border-radius:4px}
+.barrier .arm{position:absolute;left:40px;bottom:82px;width:250px;height:12px;border-radius:6px;transform-origin:2px 6px;transition:transform 1.2s cubic-bezier(.5,0,.2,1);
+  background:repeating-linear-gradient(90deg,var(--full) 0 24px,#fff 24px 48px)}
+.barrier.up .arm{transform:rotate(-80deg)}
+.barrier .road{position:absolute;left:0;right:0;bottom:0;height:24px;background:var(--surface-2)}
+.barrier .cam{position:absolute;right:20px;top:14px;font-family:var(--f-mono);font-size:.68rem;background:var(--ink);color:var(--bg);padding:3px 6px;border-radius:4px}
+.checks{display:flex;flex-direction:column;gap:8px}
+.chk{display:flex;gap:10px;align-items:center;font-size:.88rem;opacity:.35;transition:opacity .3s}
+.chk.ok{opacity:1}
+.chk i{width:22px;height:22px;border-radius:50%;background:var(--free);color:#fff;display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:900;flex:none}
+.save{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.save div{background:var(--surface);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:1px}
+.save b{font-family:var(--f-display);font-weight:900;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.save span{font-size:.7rem;color:var(--muted);line-height:1.25}
+.estim{font-size:.7rem;color:var(--muted);text-align:center}
+
+.driver-side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.walk{display:flex;flex-direction:column;gap:0}
+.walk div{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.walk div span{font-family:var(--f-mono);font-weight:700;color:var(--sign)}
+.walk div p{color:var(--muted)}
+.walk div b{color:var(--ink);display:block}
+.walk div.cur span{color:var(--amber-ink);background:var(--amber);border-radius:6px;text-align:center;height:fit-content}
+
+.dash{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.dash>*{min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;grid-column:1/-1}
+.kpi{background:var(--surface);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font-family:var(--f-display);font-weight:900;font-size:1.8rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:.8rem;color:var(--muted);line-height:1.3}
+.panel{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h3{font-size:1rem}
+table.gt{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}
+table.gt th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:6px 6px 8px;border-bottom:1px solid var(--line)}
+table.gt td{padding:9px 6px;border-bottom:1px solid var(--line)}
+table.gt td.r,table.gt th.r{text-align:right}
+table.gt tr{cursor:pointer}
+table.gt tr.sel td{background:var(--sign-soft)}
+.minibar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:60px}
+.minibar span{display:block;height:100%}
+.pill{display:inline-block;font-size:.7rem;font-weight:800;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.p-free{background:color-mix(in srgb,var(--free) 18%,transparent);color:var(--free)}
+.p-mid{background:color-mix(in srgb,var(--mid) 20%,transparent);color:var(--mid)}
+.p-full{background:color-mix(in srgb,var(--full) 18%,transparent);color:var(--full)}
+.tbl-wrap{overflow-x:auto}
+.chart svg{width:100%;height:auto;display:block}
+.c-grid{stroke:var(--line);stroke-width:1}
+.c-axis{fill:var(--muted);font:600 11px var(--f-body)}
+.c-area{fill:color-mix(in srgb,var(--sign) 18%,transparent)}
+.c-lineS{stroke:var(--sign);stroke-width:2.5;fill:none}
+.c-cap{stroke:var(--full);stroke-width:1.5;stroke-dasharray:5 5}
+.c-now{stroke:var(--amber);stroke-width:2}
+.c-dot{fill:var(--amber);stroke:var(--surface);stroke-width:3}
+.c-lbl{fill:var(--ink);font:700 12px var(--f-mono)}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.vms.small .vms-in{padding:12px 14px;gap:7px}
+.vms.small::before,.vms.small::after{display:none}
+.vms.small .led-l{font-size:1.05rem}
+.vms.small .led-row{font-size:.86rem}
+.vms.small .vms-p{width:34px;height:34px;font-size:1.25rem}
+
+/* WHY */
+.why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.wc{background:var(--surface);border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.wc .city{font-family:var(--f-mono);font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.wc.bad .city{color:var(--full)}.wc.good .city{color:var(--free)}.wc.us .city{color:var(--sign)}
+.wc p{color:var(--muted)}
+.wc.us{background:var(--sign);color:var(--sign-ink)}
+.wc.us p,.wc.us .city{color:inherit;opacity:.9}
+
+/* IMPACT */
+.imp{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:28px;align-items:start}
+.imp>*{min-width:0}
+.sliders{background:var(--surface);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:16px}
+.sl{display:flex;flex-direction:column;gap:4px}
+.sl .top{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;font-weight:600}
+.sl .top output{font-family:var(--f-mono);font-weight:700;color:var(--sign);white-space:nowrap}
+.sl input{width:100%;accent-color:var(--sign)}
+.sl .hint{font-size:.74rem;color:var(--muted)}
+.outs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.out{background:var(--surface);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.out b{font-family:var(--f-display);font-weight:900;font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.05;font-variant-numeric:tabular-nums}
+.out span{font-size:.85rem;color:var(--muted)}
+.out.hero-out{grid-column:1/-1;background:var(--ink);color:var(--bg)}
+.out.hero-out span{color:inherit;opacity:.75}
+.formula{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);background:var(--surface-2);border-radius:var(--r);padding:12px 14px;line-height:1.7;overflow-x:auto}
+
+/* PLAN */
+.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;position:relative}
+.ph{padding:22px 18px 0 0;display:flex;flex-direction:column;gap:8px;border-top:4px solid var(--line);position:relative;min-width:0}
+.ph::before{content:"";position:absolute;top:-12px;left:0;width:20px;height:20px;border-radius:50%;background:var(--bg);border:4px solid var(--line)}
+.ph.now{border-top-color:var(--sign)}
+.ph.now::before{border-color:var(--sign);background:var(--amber)}
+.ph .when{font-family:var(--f-mono);font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.ph p{color:var(--muted);font-size:.93rem}
+.money{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.money>div{background:var(--surface);border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.money ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;color:var(--muted)}
+.money li b{color:var(--ink)}
+.ask{background:var(--sign);color:var(--sign-ink);border-radius:18px;padding:36px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:center}
+.ask>div{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ask ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.ask li{display:flex;gap:10px;align-items:baseline}
+.ask li::before{content:"P";font-family:var(--f-display);font-weight:900;background:var(--sign-ink);color:var(--sign);border-radius:4px;width:20px;height:20px;display:grid;place-items:center;font-size:.8rem;flex:none;transform:translateY(3px)}
+footer{padding-block:36px 56px;display:flex;flex-direction:column;gap:16px;color:var(--muted);font-size:.88rem}
+footer ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+footer .bot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+
+@media (max-width:980px){
+  .hero,.head2,.sol,.imp,.ask{grid-template-columns:1fr}
+  .demo-driver{grid-template-columns:1fr;justify-items:center}
+  .driver-side{width:100%}
+  .dash{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fact:nth-child(3){padding-left:0;border-left:0}
+  .why,.money{grid-template-columns:1fr}
+  .road{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:28px}
+  nav.top ul li.hide-m{display:none}
+}
+@media (max-width:520px){
+  .phone{width:100%;height:740px;border-radius:30px;padding:7px}
+  .scr{border-radius:24px}
+  .facts,.outs,.road{grid-template-columns:1fr}
+  .fact+.fact{padding-left:0;border-left:0;border-top:1px solid var(--line)}
+  .ask{padding:24px}
+  .cmp{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<nav class="top" aria-label="Navigare">
+  <a class="brand" href="#top"><span class="psign">P</span>Porțile Iașului</a>
+  <ul>
+    <li class="hide-m"><a href="#problema">Problema</a></li>
+    <li class="hide-m"><a href="#solutia">Soluția</a></li>
+    <li class="hide-m"><a href="#demo">Demo</a></li>
+    <li class="hide-m"><a href="#impact">Impact</a></li>
+    <li><a class="navcta" href="#finantare">Pentru finanțatori</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-l">
+    <span class="eyebrow">Park &amp; Ride inteligent · Echipa OK COMPUTER</span>
+    <h1>Lasă mașina la poarta orașului. <span class="hl">Intră în Iași cu CTP.</span></h1>
+    <p class="lede">Parcări la fiecare intrare în oraș, lângă capetele de linie CTP. Cu abonament, parcarea e gratuită. Un sistem AI numără locurile libere în timp real și îți spune încă de pe drum unde să lași mașina.</p>
+    <div class="cta">
+      <a class="btn btn-p" href="#demo">Vezi demo-ul</a>
+      <a class="btn btn-g" href="#impact">Calculează impactul</a>
+    </div>
+  </div>
+  <div class="hero-r">
+    <div class="vms" aria-live="polite"><div class="vms-in" id="heroVms"></div></div>
+    <div class="vms-cap"><span>Panou la intrarea în oraș · simulare live</span><span class="vms-dots" id="heroDots"></span></div>
+  </div>
+</header>
+
+<section class="blk" id="problema">
+  <div class="head2">
+    <div><span class="eyebrow">Problema</span><h2>Iașiul se sufocă la intrări</h2></div>
+    <p class="lead">Zeci de mii de oameni din comunele din jur vin zilnic în oraș cu mașina. Toți se înghesuie pe aceleași câteva drumuri, apoi caută un loc de parcare în centru, adesea pe trotuar sau pe marginea carosabilului.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>86.000</b><p>de mașini intră zilnic în Iași<sup>1</sup></p></div>
+    <div class="fact"><b>176.000</b><p>de mașini înmatriculate în oraș<sup>1</sup></p></div>
+    <div class="fact"><b>9+ zile</b><p>pe an pierde un șofer ieșean în trafic<sup>2</sup></p></div>
+    <div class="fact"><b>75%</b><p>din mașini au peste 10 ani, deci poluează mai mult<sup>1</sup></p></div>
+  </div>
+  <p class="quote">„Suntem depășiți de situație, având în vedere numărul mașinilor.”<span>Poliția Locală Iași, despre mașinile parcate neregulamentar, martie 2025<sup>3</sup></span></p>
+</section>
+
+<section class="blk" id="solutia">
+  <div class="head2">
+    <div><span class="eyebrow">Soluția</span><h2>Șase porți, o singură regulă simplă</h2></div>
+    <p class="lead">Construim parcări de transfer la intrările în oraș, chiar lângă capetele de linie CTP. Partea noastră este stratul digital care face totul simplu: locuri libere în timp real, recunoașterea numărului de înmatriculare și legătura directă cu cardul CTP.</p>
+  </div>
+  <div class="sol">
+    <div class="mapbox" id="solMap"></div>
+    <div class="steps">
+      <div class="step"><span class="k">1</span><div><h3>Vezi locurile libere de pe drum</h3><p>Panourile de la intrare și aplicația îți arată câte locuri sunt libere la fiecare poartă și cât faci până în centru cu mașina, față de CTP.</p></div></div>
+      <div class="step"><span class="k">2</span><div><h3>Bariera te recunoaște</h3><p>Camera citește numărul mașinii. Dacă ai abonament CTP valid, bariera se ridică și parcarea e gratuită. Fără abonament, plătești un bilet P+R care include și călătoria.</p></div></div>
+      <div class="step"><span class="k">3</span><div><h3>Mergi mai departe cu tramvaiul</h3><p>Stația e la câțiva pași. Aplicația îți spune în câte minute pleacă următorul tramvai sau autobuz. Seara, mașina te așteaptă la poartă.</p></div></div>
+      <div class="rule"><b>Regula: cu abonament CTP, parcarea e gratuită</b><span class="small">E modelul care funcționează deja la Brașov.<sup>4</sup> Cine nu are abonament plătește un bilet P+R (parcare pe toată ziua plus două călătorii).</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="blk" id="demo">
+  <div class="head2">
+    <div><span class="eyebrow">Demo interactiv</span><h2>Cum arată pentru șofer și pentru oraș</h2></div>
+    <p class="lead">Două ecrane pe aceleași date: aplicația șoferului și dispeceratul Primăriei. Mută ora din bara de mai jos și urmărește cum se umplu porțile dimineața și cum se golesc seara.</p>
+  </div>
+  <div class="simbar">
+    <button class="play" id="play" aria-label="Pornește simularea zilei"></button>
+    <span class="clock" id="clock">08:30</span>
+    <input type="range" id="tslider" min="300" max="1380" step="5" value="510" aria-label="Ora simulării">
+    <button class="preset" data-t="510">08:30 vârf</button>
+    <button class="preset" data-t="780">13:00</button>
+    <button class="preset" data-t="1050">17:30 întoarcere</button>
+    <span class="srv" id="srv" aria-live="polite">simulare locală</span>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="driver" id="tabDriver">Aplicația șoferului</button>
+    <button role="tab" aria-selected="false" data-tab="city" id="tabCity">Dispeceratul orașului</button>
+  </div>
+
+  <div id="paneDriver" class="demo-driver">
+    <div class="phone"><div class="scr" id="app"></div></div>
+    <div class="driver-side">
+      <h3>Încearcă traseul unui navetist</h3>
+      <div class="walk" id="walk">
+        <div data-s="form"><span>01</span><p><b>Spune de unde vii</b>Alege comuna și destinația din oraș. Abonamentul CTP e pornit implicit.</p></div>
+        <div data-s="rec"><span>02</span><p><b>Primește poarta potrivită</b>Vezi locurile libere și comparația cu mașina până în centru. La ora de vârf, AI-ul te poate trimite la o poartă mai liberă.</p></div>
+        <div data-s="res"><span>03</span><p><b>Rezervă locul pentru 20 de minute</b>Introdu numărul mașinii. Nu ai nevoie de bilet sau de cod.</p></div>
+        <div data-s="gate"><span>04</span><p><b>Treci de barieră</b>Camera citește numărul, sistemul verifică abonamentul și bariera se ridică.</p></div>
+        <div data-s="tram"><span>05</span><p><b>Urcă în tramvai</b>Vezi când pleacă următoarea cursă și ce ai economisit azi.</p></div>
+      </div>
+      <p class="src">Timpii și costurile din demo sunt estimări pentru prezentare. Ele variază cu ora simulată. Locațiile și capacitățile porților sunt propuneri care trebuie validate cu Primăria și CTP.</p>
+    </div>
+  </div>
+
+  <div id="paneCity" class="dash" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><h3>Harta porților în timp real</h3><div id="dashMap"></div></div>
+    <div class="panel">
+      <h3>Ocupare pe porți</h3>
+      <div class="tbl-wrap"><table class="gt" id="gtable"></table></div>
+      <div class="alerts" id="alerts"></div>
+    </div>
+    <div class="panel chart"><h3>Mașini parcate la porți, de-a lungul zilei</h3><div id="chart"></div><p class="tiny muted">Linia roșie punctată este capacitatea totală. Curba vine din modelul de simulare, nu din date măsurate.</p></div>
+    <div class="panel"><h3 id="vmsTitle">Ce afișează acum panoul de la poarta Păcurari</h3><div class="vms small"><div class="vms-in" id="dashVms"></div></div><p class="small muted">Atinge o poartă pe hartă sau în tabel. Panourile se actualizează automat, iar când o poartă se umple, AI-ul redirecționează mașinile spre poarta vecină.</p></div>
+  </div>
+</section>
+
+<section class="blk" id="de-ce">
+  <div class="head2">
+    <div><span class="eyebrow">De ce va funcționa</span><h2>Am învățat din ce au făcut alte orașe</h2></div>
+    <p class="lead">Ideea de parcare la marginea orașului nu e nouă. Diferența dintre o parcare plină și una goală stă într-un singur lucru: cât de simplu e să treci din mașină în transportul public.</p>
+  </div>
+  <div class="why">
+    <div class="wc bad"><span class="city">București · Străulești</span><h3>O parcare mai mereu goală</h3><p>Singura parcare intermodală din București stătea aproape goală pentru că nu avea un abonament comun cu metroul.<sup>4</sup></p></div>
+    <div class="wc good"><span class="city">Brașov</span><h3>Gratuit cu abonament</h3><p>Brașovul a deschis parcări la capete de linie, gratuite pentru cine are abonament valid la transportul public.<sup>4</sup></p></div>
+    <div class="wc us"><span class="city">Iași · Porțile Iașului</span><h3>Abonament + date în timp real</h3><p>Pornim de la modelul Brașovului și adăugăm ce lipsește: recunoașterea automată a numărului, locurile libere afișate de pe drum și redirecționarea spre porțile mai libere.</p></div>
+  </div>
+  <p class="lead">Primăria Iași a anunțat încă din 2021 că vrea parcări Park &amp; Ride la toate intrările în oraș, finanțate din fonduri europene 2021–2027, și le-a cerut comunelor din jur să identifice terenuri.<sup>5</sup> Proiectul nostru vine cu stratul digital și cu planul de pornire.</p>
+</section>
+
+<section class="blk" id="impact">
+  <div class="head2">
+    <div><span class="eyebrow">Simulator de impact</span><h2>Cât contează, în cifre</h2></div>
+    <p class="lead">Mută cursoarele ca să vezi efectul unor scenarii diferite. Toate ipotezele sunt la vedere și se pot schimba. Valorile de pornire sunt prudente.</p>
+  </div>
+  <div class="imp">
+    <div class="sliders" id="sliders"></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="outs" id="outs"></div>
+      <div class="formula" id="formula"></div>
+    </div>
+  </div>
+</section>
+
+<section class="blk" id="finantare">
+  <div class="head2">
+    <div><span class="eyebrow">Plan și finanțare</span><h2>Pornim mic, cu o singură poartă</h2></div>
+    <p class="lead">Nu cerem de la început bani pentru șase parcări. Propunem un pilot la poarta Păcurari, care să arate în trei luni cu date reale câte mașini rămân în afara centrului.</p>
+  </div>
+  <div class="road">
+    <div class="ph now"><span class="when">Acum · hackathon</span><h3>Prototip</h3><p>Aplicația pentru șoferi, dispeceratul și modelul de simulare, gata de demonstrat.</p></div>
+    <div class="ph"><span class="when">Faza 1 · 3 luni</span><h3>Pilot Păcurari</h3><p>O parcare existentă lângă capătul de linie, o cameră la barieră, legătura cu cardul CTP. Măsurăm ocuparea și numărul de călătorii noi.</p></div>
+    <div class="ph"><span class="when">Faza 2 · 12–18 luni</span><h3>Toate porțile</h3><p>CUG, Ciurea, Bucium, Dancu și Copou, împreună cu comunele vecine. Panouri pe drumurile de intrare.</p></div>
+    <div class="ph"><span class="when">Faza 3</span><h3>Parcări de cartier</h3><p>Aceeași tehnologie pentru parcările din cartiere, ca să eliberăm străzile și trotuarele de mașini parcate.</p></div>
+  </div>
+  <div class="money">
+    <div><h3>Din ce se finanțează</h3><ul>
+      <li><b>Fonduri europene 2021–2027</b> pentru mobilitate urbană, direcție deja anunțată de Primărie.<sup>5</sup></li>
+      <li><b>Bugetul local și al comunelor</b> pentru terenuri și amenajare, prin asociația metropolitană.</li>
+      <li><b>Parteneriat cu CTP Iași</b> pentru integrarea cu cardul de călătorie.</li>
+      <li><b>Sponsori privați</b> pentru pilot: firme cu mulți angajați navetiști.</li>
+    </ul></div>
+    <div><h3>Ce venituri aduce</h3><ul>
+      <li><b>Bilete P+R</b> plătite de șoferii fără abonament.</li>
+      <li><b>Abonamente CTP noi</b>, vândute navetiștilor care până acum veneau cu mașina.</li>
+      <li><b>Publicitate</b> pe panouri și în aplicație.</li>
+      <li><b>Date anonime de mobilitate</b> pentru planificarea urbană: de unde vin oamenii și la ce oră.</li>
+    </ul></div>
+  </div>
+  <div class="ask">
+    <div><span class="eyebrow" style="color:inherit;opacity:.8">Ce căutăm</span><h2>Susțineți pilotul de la Păcurari</h2><p style="opacity:.9">Avem prototipul. Pentru pilot ne trebuie un teren sau o parcare existentă, o barieră cu cameră și acces la validările cardurilor CTP.</p></div>
+    <ul>
+      <li>Primăria Iași și asociația metropolitană: terenul și cadrul legal</li>
+      <li>CTP Iași: integrarea cu cardul de călătorie</li>
+      <li>Finanțatori și sponsori: echipamentele pentru pilot</li>
+      <li>Mentori: urbanism, transport, AI</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <strong style="color:var(--ink)">Surse</strong>
+  <ol>
+    <li><a href="https://adevarul.ro/stiri-locale/iasi/orasul-in-care-oamenii-fac-doua-ore-pe-drum-intre-2313154.html">Adevărul, „Orașul în care oamenii fac două ore pe drum…”, noiembrie 2023</a></li>
+    <li><a href="https://www.bzi.ro/traficul-din-romania-analizat-oras-cu-oras-cate-zile-pe-an-pierd-soferii-din-iasi-in-ambuteiaje-5350726">BZI, Indexul de Trafic 2025 (Institutul pentru Orașe Vizionare), septembrie 2025</a></li>
+    <li><a href="https://www.bzi.ro/fenomen-scapat-de-sub-control-la-iasi-toate-strazile-din-oras-sunt-pline-de-masini-parcate-neregulamentar-suntem-depasiti-de-situatie-5197329">BZI, despre mașinile parcate neregulamentar, martie 2025</a></li>
+    <li><a href="https://stirileprotv.ro/stiri/actualitate/motivul-pentru-care-singura-parcare-inter-modala-din-bucuresti-este-goala.html">Știrile ProTV, despre parcările intermodale din București și Brașov, aprilie 2019</a></li>
+    <li><a href="https://www.bzi.ro/surpriza-totala-pentru-soferii-din-iasi-primaria-nu-mai-vrea-sa-lase-toate-masinile-sa-intre-in-municipiu-4130612">BZI, despre planul Park &amp; Ride al Primăriei Iași, februarie 2021</a></li>
+  </ol>
+  <div class="bot"><span>Porțile Iașului · Echipa OK COMPUTER · Hackathon AI, tema trafic rutier</span><span>Demo: date simulate, locații propuse</span></div>
+</footer>
+</div>
+
+<script>
+/* ======================================================================
+   PORȚILE IAȘULUI — demo
+   Pentru echipa de backend: obiectul API este singurul loc care trebuie
+   legat de server. Acum funcțiile simulează datele local.
+   ====================================================================== */
+
+const GATES = [
+  {id:'copou',    nume:'Copou',    dir:'Nord',     din:'Rediu · Botoșani',              loc:220, max:.80, rise:7.55, fall:17.1, spre:12, x:300, y:58},
+  {id:'dancu',    nume:'Dancu',    dir:'Est',      din:'Holboca · Tomești',             loc:380, max:.92, rise:7.30, fall:17.3, spre:18, x:520, y:168},
+  {id:'bucium',   nume:'Bucium',   dir:'Sud-Est',  din:'Bârnova · Vaslui',              loc:260, max:.86, rise:7.45, fall:17.5, spre:20, x:498, y:368},
+  {id:'ciurea',   nume:'Ciurea',   dir:'Sud',      din:'Ciurea · Lunca Cetățuii',       loc:200, max:.74, rise:7.50, fall:17.0, spre:22, x:300, y:420},
+  {id:'cug',      nume:'CUG',      dir:'Sud-Vest', din:'Miroslava',                     loc:320, max:.88, rise:7.60, fall:17.2, spre:20, x:105, y:358},
+  {id:'pacurari', nume:'Păcurari', dir:'Vest',     din:'Lețcani · Podu Iloaiei · Târgu Frumos', loc:450, max:.985, rise:7.35, fall:17.4, spre:16, x:88, y:158}
+];
+const CAP = GATES.reduce((s,g)=>s+g.loc,0);
+const NEIGH = {copou:'pacurari', dancu:'bucium', bucium:'ciurea', ciurea:'cug', cug:'pacurari', pacurari:'cug'};
+const ORIGINS = [
+  ['Lețcani / Podu Iloaiei', 'pacurari', 9], ['Târgu Frumos', 'pacurari', 28], ['Miroslava', 'cug', 8],
+  ['Ciurea / Lunca Cetățuii', 'ciurea', 9], ['Bârnova / Vaslui', 'bucium', 12], ['Holboca / Tomești', 'dancu', 10], ['Rediu / Botoșani', 'copou', 9]
+];
+const DESTS = [['Piața Unirii',0,9],['Palas',3,8],['UAIC (Copou)',6,10],['Spitalul Sf. Spiridon',2,9],['Gara',4,8],['Tătărași',5,10]];
+
+const sig = x => 1/(1+Math.exp(-x));
+/* Date primite de la backend (simulator + model AI). Fără server, demo-ul folosește simularea locală de mai jos. */
+const CACHE = { timeline:null, forecast:null, stats:null };
+function occ(g, tMin){
+  const tl = CACHE.timeline && CACHE.timeline.porti[g.id];
+  if (tl){ const i = Math.round((tMin - CACHE.timeline.start) / CACHE.timeline.pas); if (i >= 0 && i < tl.length) return tl[i]; }
+  const h = tMin/60;
+  const wob = 0.012*Math.sin(tMin/17 + g.loc) + 0.008*Math.sin(tMin/7.3 + g.x);
+  const v = 0.06 + (g.max-0.06) * sig((h-g.rise)/0.32) * (1 - 0.88*sig((h-g.fall)/0.55)) + wob;
+  return Math.max(0.03, Math.min(1, v));
+}
+const freeAt = (g,t) => Math.max(0, Math.round(g.loc*(1-occ(g,t))));
+const parkedAt = (g,t) => g.loc - freeAt(g,t);
+const rushFactor = t => { const h=t/60; return 1 + 1.25*Math.exp(-Math.pow((h-8)/0.9,2)) + 1.0*Math.exp(-Math.pow((h-17.4)/1.1,2)) + .25*Math.exp(-Math.pow((h-13)/1.5,2)); };
+const headway = t => { const h=t/60; return (h>=6.5&&h<=9.5)||(h>=15.5&&h<=19) ? 5 : (h<6||h>21.5 ? 15 : 8); };
+const fmtT = m => String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(Math.round(m%60)).padStart(2,'0');
+const nf = n => Math.round(n).toLocaleString('ro-RO');
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stCls = o => o>=.93?'full':o>=.75?'mid':'free';
+const stTxt = o => o>=.93?'aproape plină':o>=.75?'se umple':'locuri libere';
+const stColor = o => `var(--${stCls(o)})`;
+
+const LOCAL_API = {
+  // GET /api/gates?t=  -> starea porților (în realitate: camere + senzori + model AI)
+  async gates(t){ return GATES.map(g=>({...g, ocupare:occ(g,t), libere:freeAt(g,t)})); },
+  // POST /api/recommend {origine, destinatie}
+  async recommend(oi, di, t, abon){
+    const [oname, gid, driveKm] = ORIGINS[oi], [dname, dOff, cityKm] = DESTS[di];
+    let g = GATES.find(x=>x.id===gid), redirected = null;
+    if (occ(g,t) >= .93){ redirected = g; g = GATES.find(x=>x.id===NEIGH[gid]); }
+    const rf = rushFactor(t);
+    const toGate = Math.round(driveKm*1.25*Math.min(rf,1.4) + (redirected?4:0));
+    const walk = 3, wait = Math.round(headway(t)/2), ride = Math.max(8, g.spre + dOff - (g.id==='copou'&&di===2?8:0)), last = 4;
+    const pr = toGate + walk + wait + ride + last;
+    const carCity = Math.round(cityKm*2.2*rf), search = Math.round(4 + 7*Math.min(1,(rf-1)));
+    const car = toGate + carCity + search + 2;
+    const fuel = (driveKm*2 + cityKm*2)*0.65, parkCity = 14;
+    const carCost = Math.round(fuel + parkCity), prCost = abon ? Math.round(driveKm*2*0.65) : Math.round(driveKm*2*0.65 + 8);
+    return { oname, dname, gate:{...g, ocupare:occ(g,t), libere:freeAt(g,t)}, redirected,
+      pr, car, legs:{toGate, walk, wait, ride, last}, search, carCity,
+      prCost, carCost, co2:+(cityKm*2*0.15).toFixed(1), headway:headway(t) };
+  },
+  // POST /api/reservations {poarta, numar}
+  async reserve(gid, plate){ return { id:'R'+Date.now().toString(36).toUpperCase(), gid, plate, minute:20 }; },
+  // POST /api/gate-events {numar} -> camera ANPR + verificare abonament CTP
+  async gateEntry(plate, abon){ return { recunoscut:true, abonament:abon, tarif: abon?0:8, sector:'B', loc: 20 + Math.floor(Math.random()*60) }; }
+};
+
+/* ---------- Legătura cu backendul ----------
+   Pagina deschisă de pe server (http://localhost:8000) folosește automat serverul.
+   Pagina deschisă din altă parte: adăugați ?api=http://localhost:8000 la adresă.
+   Dacă serverul nu răspunde, demo-ul continuă cu simularea locală (LOCAL_API), fără erori pe ecran. */
+const BACKEND = (() => {
+  const q = new URLSearchParams(location.search).get('api');
+  if (q) return q.replace(/\/$/, '');
+  return /^https?:$/.test(location.protocol) ? '' : null;   // '' = același server care a trimis pagina
+})();
+let ONLINE = false;
+class ApiError extends Error { constructor(mesaj, status){ super(mesaj); this.status = status; } }
+async function api(cale, opt = {}){
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    const r = await fetch(BACKEND + cale, { method: opt.method || 'GET', signal: ctrl.signal,
+      headers: opt.body ? { 'Content-Type': 'application/json' } : undefined,
+      body: opt.body ? JSON.stringify(opt.body) : undefined });
+    const date = await r.json().catch(() => null);
+    if (!r.ok || date === null) throw new ApiError((date && date.detail) || ('Serverul a răspuns ' + r.status), r.status);
+    return date;
+  } finally { clearTimeout(timer); }
+}
+function treciOffline(e){
+  console.warn('Backendul nu răspunde, continui cu simularea locală.', e);
+  ONLINE = false; CACHE.timeline = CACHE.forecast = CACHE.stats = null; arataStare();
+}
+async function cuServer(apel, rezerva){   // întâi serverul; la probleme de conexiune, simularea locală
+  if (ONLINE) try { return await apel(); } catch(e){
+    if (e instanceof ApiError && e.status < 500) throw e;    // eroare de date (ex. număr greșit): o arătăm
+    if (!(e instanceof ApiError)) treciOffline(e);
+  }
+  return rezerva();
+}
+const cuPoarta = g => ({ ...GATES.find(x => x.id === g.id), ...g });
+const API = {
+  gates: t => cuServer(async () => (await api(`/api/gates?t=${t}`)).map(cuPoarta), () => LOCAL_API.gates(t)),
+  recommend: (oi, di, t, abon) => cuServer(async () => {
+    const r = await api('/api/recommend', { method:'POST', body:{ origine:oi, destinatie:di, t, abonament:abon } });
+    r.gate = cuPoarta(r.gate); if (r.redirected) r.redirected = cuPoarta(r.redirected);
+    return r;
+  }, () => LOCAL_API.recommend(oi, di, t, abon)),
+  reserve: (gid, plate) => cuServer(async () => {
+    const r = await api('/api/reservations', { method:'POST', body:{ poarta:gid, numar:plate, t:T, abonament:P.abon } });
+    reimprospateaza(true);
+    return r;
+  }, () => LOCAL_API.reserve(gid, plate)),
+  gateEntry: (plate, abon) => cuServer(async () => {
+    const r = await api('/api/gate-events', { method:'POST', body:{ numar:plate, poarta:P.rec && P.rec.gate.id, t:T, tip:'intrare' } });
+    reimprospateaza(true);
+    return r;
+  }, () => LOCAL_API.gateEntry(plate, abon))
+};
+
+/* ---------- Ceasul simulării (comun pentru toate ecranele) ---------- */
+let T = 510, playing = false, playTimer = null;
+const subs = [];
+function setT(v){ T = Math.max(300, Math.min(1380, v)); document.getElementById('tslider').value = T; document.getElementById('clock').textContent = fmtT(T); subs.forEach(f=>f()); }
+const playIco = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6z"/></svg>', pauseIco = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>';
+const playBtn = document.getElementById('play'); playBtn.innerHTML = playIco;
+playBtn.onclick = () => { playing = !playing; playBtn.innerHTML = playing?pauseIco:playIco; playBtn.setAttribute('aria-label', playing?'Oprește simularea':'Pornește simularea zilei');
+  clearInterval(playTimer); if (playing) playTimer = setInterval(()=> setT(T>=1380?300:T+5), 140); };
+document.getElementById('tslider').oninput = e => setT(+e.target.value);
+document.querySelectorAll('.preset').forEach(b=> b.onclick = ()=> setT(+b.dataset.t));
+
+/* ---------- Harta schematică ---------- */
+function mapSVG({live=false, sel=null}={}){
+  const C = [300,240];
+  const edge = g => { const dx=g.x-C[0], dy=g.y-C[1], k=1.32; return [C[0]+dx*k, C[1]+dy*k]; };
+  let s = `<svg viewBox="-110 -10 820 480" role="img" aria-label="Schema celor șase porți ale Iașului, în jurul centrului">`;
+  s += `<circle class="m-ring" cx="${C[0]}" cy="${C[1]}" r="105"/>`;
+  GATES.forEach(g=>{ const e = edge(g); s += `<line class="m-road" x1="${e[0]}" y1="${e[1]}" x2="${g.x}" y2="${g.y}"/>`; });
+  GATES.forEach(g=>{ s += `<line class="m-line" x1="${g.x}" y1="${g.y}" x2="${C[0]}" y2="${C[1]}"/>`; });
+  s += `<circle class="m-center" cx="${C[0]}" cy="${C[1]}" r="9"/><text class="m-centerlbl" x="${C[0]+16}" y="${C[1]+5}">Centru</text>`;
+  GATES.forEach(g=>{
+    const o = occ(g,T), fr = freeAt(g,T);
+    const west = g.x < C[0]-60, east = g.x > C[0]+60, north = g.y < C[1];
+    let lx, ly, an;
+    if (west){ lx = g.x - 26; ly = g.y - 8; an = 'end'; }
+    else if (east){ lx = g.x + 26; ly = g.y - 8; an = 'start'; }
+    else { lx = g.x + 26; ly = g.y - 8; an = 'start'; }
+    const from = esc(g.din.split(' · ').slice(0,1).join(''));
+    s += `<g class="m-gate ${sel===g.id?'sel':''}" data-gate="${g.id}" tabindex="0" role="button" aria-label="Poarta ${esc(g.nume)}">
+      <rect x="${g.x-17}" y="${g.y-17}" width="34" height="34" rx="6"/>
+      <text class="p" x="${g.x}" y="${g.y+5}" text-anchor="middle">P</text>
+      <text class="n" x="${lx}" y="${ly}" text-anchor="${an}">${esc(g.nume)}</text>
+      ${live?`<text class="o" x="${lx}" y="${ly+17}" text-anchor="${an}" style="fill:${stColor(o)}">${fr} libere · ${Math.round(o*100)}%</text>`:`<text class="o" x="${lx}" y="${ly+17}" text-anchor="${an}" style="fill:var(--muted)">${g.loc} locuri propuse</text>`}
+      <text class="m-roadlbl" x="${lx}" y="${ly+34}" text-anchor="${an}">dinspre ${from}</text>
+      ${live?`<circle cx="${g.x+17}" cy="${g.y-17}" r="7" style="fill:${stColor(o)};stroke:var(--surface);stroke-width:2.5"/>`:''}
+    </g>`;
+  });
+  s += `<text class="m-roadlbl" x="700" y="462" text-anchor="end">schemă orientativă, nu la scară</text></svg>`;
+  return s;
+}
+const solMap = document.getElementById('solMap');
+solMap.classList.add('anim');
+solMap.innerHTML = mapSVG();
+
+/* ---------- Panoul LED ---------- */
+function vmsHTML(g, t){
+  const o = occ(g,t), fr = freeAt(g,t), rf = rushFactor(t);
+  const carMin = Math.round(g.spre*0.9*rf + 8), ctpMin = g.spre + Math.round(headway(t)/2);
+  const full = o >= .93, alt = GATES.find(x=>x.id===NEIGH[g.id]);
+  return `<div class="vms-head"><span class="vms-p">P</span><div class="led led-l">P+R ${esc(g.nume)}</div></div>
+    <div class="led led-row"><span>Locuri libere</span><span class="${full?'r':'g'}">${full?'COMPLET':fr}</span></div>
+    ${full?`<div class="led led-row"><span>Folosiți P+R ${esc(alt.nume)}</span><span class="g">${freeAt(alt,t)}</span></div>`:''}
+    <div class="led led-row"><span>Centru cu CTP</span><span>${ctpMin} min</span></div>
+    <div class="led led-row"><span>Centru cu mașina</span><span class="${carMin>ctpMin?'r':''}">${carMin} min</span></div>`;
+}
+let heroIdx = 5;
+const heroDots = document.getElementById('heroDots');
+heroDots.innerHTML = GATES.map(()=>'<i></i>').join('');
+function heroTick(){
+  document.getElementById('heroVms').innerHTML = vmsHTML(GATES[heroIdx], T);
+  [...heroDots.children].forEach((d,i)=>d.classList.toggle('on', i===heroIdx));
+}
+setInterval(()=>{ heroIdx = (heroIdx+1)%GATES.length; heroTick(); }, 3200);
+subs.push(heroTick);
+
+/* ---------- Aplicația șoferului ---------- */
+const P = { step:'form', oi:0, di:0, abon:true, plate:'IS 23 OKC', rec:null, res:null, resEnd:0, entry:null, tramEnd:0, err:'' };
+const app = document.getElementById('app');
+const ORDER = ['form','rec','res','gate','tram'];
+
+function appHead(title, back){
+  return `<div class="sbar"><span>${fmtT(T)}</span><span>Iași · 5G</span></div>
+  <div class="ahead"><span class="psign">P</span><b>${title}</b>${back?`<button class="back" data-a="back">Înapoi</button>`:''}</div>`;
+}
+function vForm(){
+  return `<div class="abody">
+    <div class="card" style="gap:4px"><span class="small muted">Bună dimineața! Unde mergi azi?</span></div>
+    <div class="card">
+      <div class="fld"><label for="ori">Vin dinspre</label><select id="ori">${ORIGINS.map((o,i)=>`<option value="${i}" ${i===P.oi?'selected':''}>${esc(o[0])}</option>`).join('')}</select></div>
+      <div class="fld"><label for="dst">Merg la</label><select id="dst">${DESTS.map((d,i)=>`<option value="${i}" ${i===P.di?'selected':''}>${esc(d[0])}</option>`).join('')}</select></div>
+      <div class="tog"><span>Am abonament CTP</span><button class="sw" role="switch" aria-checked="${P.abon}" data-a="abon" aria-label="Am abonament CTP"></button></div>
+    </div>
+    <button class="pb" data-a="find">Găsește poarta</button>
+    <div class="card"><span class="small" style="font-weight:700">Porțile acum</span>
+      ${GATES.map(g=>{const o=occ(g,T);return `<div style="display:flex;align-items:center;gap:10px;font-size:.84rem"><span style="flex:0 0 72px;font-weight:700">${g.nume}</span><span class="minibar" style="flex:1"><span style="width:${o*100}%;background:${stColor(o)}"></span></span><span class="num" style="flex:0 0 66px;text-align:right">${freeAt(g,T)} libere</span></div>`;}).join('')}
+    </div></div>`;
+}
+function vRec(){
+  const r = P.rec, g = r.gate, o = g.ocupare, win = r.pr <= r.car;
+  return `<div class="abody">
+    ${r.redirected?`<div class="ai"><b>AI</b><span>Poarta ${esc(r.redirected.nume)} ${r.prognoza&&r.prognoza.sursa==='model'?'va fi plină când ajungi':'e aproape plină'}. Te trimitem la ${esc(g.nume)}: ai loc sigur și faci doar 4 minute în plus.</span></div>`
+      :(r.prognoza&&r.prognoza.sursa==='model'?`<div class="ai"><b>AI</b><span>Predicție: când ajungi la poartă (${fmtT(r.prognoza.ora_sosire)}), vor fi ~${r.prognoza.libere_la_sosire} locuri libere.</span></div>`:'')}
+    <div class="gatecard">
+      <span class="small" style="opacity:.85">Poarta recomandată · ${esc(g.dir)}</span>
+      <div class="row"><h3>P+R ${esc(g.nume)}</h3><div style="text-align:right"><div class="free num">${g.libere}</div><span class="tiny" style="opacity:.85">locuri libere din ${g.loc}</span></div></div>
+      <div class="occbar"><span style="width:${o*100}%;background:${o>=.93?'#FF8A80':o>=.75?'#FFD166':'#7BE3A8'}"></span></div>
+    </div>
+    <div class="cmp">
+      <div class="${win?'win':''}"><span class="l">Prin poartă</span><span class="t">${r.pr} min</span><span class="d">${P.abon?'parcare gratuită':'bilet P+R 8 lei'} · ~${r.prCost} lei</span></div>
+      <div class="${win?'':'win'}"><span class="l">Cu mașina până în centru</span><span class="t">${r.car} min</span><span class="d">din care ~${r.search} min cauți loc · ~${r.carCost} lei</span></div>
+    </div>
+    <div class="card"><div class="legs">
+      <div class="leg"><i></i><span>Condu până la poarta ${esc(g.nume)}</span><b>${r.legs.toGate} min</b></div>
+      <div class="leg"><i></i><span>Parchezi și mergi la stație</span><b>${r.legs.walk} min</b></div>
+      <div class="leg"><i></i><span>Aștepți CTP (o cursă la ~${r.headway} min)</span><b>${r.legs.wait} min</b></div>
+      <div class="leg"><i></i><span>Cu CTP până la ${esc(r.dname)}</span><b>${r.legs.ride} min</b></div>
+      <div class="leg"><i></i><span>Pe jos până la destinație</span><b>${r.legs.last} min</b></div>
+    </div></div>
+    <button class="pb" data-a="toRes">Rezervă un loc la ${esc(g.nume)}</button>
+    <p class="estim">Estimări pentru ora ${fmtT(T)} · demo</p></div>`;
+}
+function vRes(){
+  if (!P.res) return `<div class="abody">
+    <div class="card"><div class="fld"><label for="plate">Numărul mașinii</label><input type="text" id="plate" class="plate" value="${esc(P.plate)}" autocomplete="off"></div>
+    ${P.err?`<span class="small" style="color:var(--full)">${esc(P.err)}</span>`:`<span class="small muted">Camera de la barieră recunoaște numărul. Nu ai nevoie de bilet sau de cod.</span>`}</div>
+    <div class="card"><div class="tog"><span>Locul e păstrat</span><b class="num">20 min</b></div><div class="tog"><span>Tarif</span><b>${P.abon?'Gratuit (abonament CTP)':'8 lei · bilet P+R'}</b></div></div>
+    <button class="pb" data-a="reserve">Confirmă rezervarea</button></div>`;
+  const left = Math.max(0, P.resEnd - Date.now()), mm = Math.floor(left/60000), ss = Math.floor(left/1000)%60;
+  return `<div class="abody">
+    <div class="gatecard"><span class="small" style="opacity:.85">Rezervare ${esc(P.res.id)}</span><h3>Loc păstrat la P+R ${esc(P.rec.gate.nume)}</h3><span class="plate" style="font-size:1.1rem">${esc(P.plate)}</span></div>
+    <div class="card" style="align-items:center"><span class="small muted">Locul tău e păstrat încă</span><div class="cd" id="cd">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div></div>
+    <div class="ai"><b>AI</b><span>${fillTime(P.rec.gate)?`Predicție: poarta ${esc(P.rec.gate.nume)} se umple în jurul orei ${fmtT(fillTime(P.rec.gate))}.`:`Predicție: poarta ${esc(P.rec.gate.nume)} nu se umple în următoarele ore.`} Locul tău rămâne rezervat oricum.</span></div>
+    <button class="pb amb" data-a="arrive">Am ajuns la barieră</button>
+    <p class="estim">În demo, apasă butonul ca să simulezi sosirea.</p></div>`;
+}
+function fillTime(g){
+  const f = CACHE.forecast;   // predicția modelului AI de pe server
+  if (f && Math.abs(f.t - T) <= 15 && f.porti[g.id]) return f.porti[g.id].se_umple_la;
+  for (let t=T; t<=T+240; t+=5) if (occ(g,t)>=.93) return t; return null;
+}
+function vGate(){
+  const e = P.entry;
+  return `<div class="abody">
+    <div class="barrier" id="barrier"><div class="road"></div><div class="post"></div><div class="arm"></div><span class="cam">CAM 01 · ${esc(P.plate)}</span></div>
+    <div class="card checks">
+      <div class="chk" id="c1"><i>✓</i><span>Număr recunoscut: <b class="plate">${esc(P.plate)}</b></span></div>
+      <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Abonament CTP valid':'Bilet P+R plătit în aplicație'}</span></div>
+      <div class="chk" id="c3"><i>✓</i><span>${e.tarif?`Tarif: ${e.tarif} lei, include 2 călătorii`:'Parcare gratuită azi'}</span></div>
+      <div class="chk" id="c4"><i>✓</i><span>Loc alocat: sector ${e.sector}, locul ${e.loc}</span></div>
+    </div>
+    <button class="pb" data-a="toTram" id="toTram" disabled style="opacity:.4">Spre stația CTP</button></div>`;
+}
+function vTram(){
+  const r = P.rec, left = Math.max(0, P.tramEnd - Date.now()), mm = Math.floor(left/60000), ss = Math.floor(left/1000)%60;
+  const saved = Math.max(0, r.car - r.pr);
+  return `<div class="abody">
+    <div class="card" style="align-items:center;gap:6px"><span class="small muted">Următoarea cursă CTP spre ${esc(r.dname)} pleacă în</span><div class="cd" id="cd">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div><span class="small muted">din stația ${esc(r.gate.nume)} · la 3 min de mers pe jos</span></div>
+    <div class="save">
+      <div><b>${saved>0?saved+' min':'—'}</b><span>${saved>0?'mai repede decât cu mașina':'ai evitat căutatul de loc'}</span></div>
+      <div><b>${Math.max(0,r.carCost-r.prCost)} lei</b><span>economisiți azi</span></div>
+      <div><b>${String(r.co2).replace('.',',')} kg</b><span>CO₂ în minus în centru</span></div>
+    </div>
+    <div class="card"><span class="small" style="font-weight:700">Seara</span><span class="small muted">Mașina te așteaptă la sector ${P.entry.sector}, locul ${P.entry.loc}. La ieșire, bariera se ridică singură. Te anunțăm dacă pe drumul spre casă e aglomerat.</span></div>
+    <button class="pb alt" data-a="restart">Încearcă alt traseu</button></div>`;
+}
+const VIEWS = {form:[vForm,'Porțile Iașului',false], rec:[vRec,'Recomandarea ta',true], res:[vRes,'Rezervare',true], gate:[vGate,'La barieră',false], tram:[vTram,'Mergi mai departe',false]};
+function renderApp(){
+  const v = VIEWS[P.step], sc = app.querySelector('.abody')?.scrollTop||0;
+  app.innerHTML = appHead(v[1], v[2]) + v[0]();
+  if (P.step==='form') app.querySelector('.abody').scrollTop = sc;
+  document.querySelectorAll('#walk>div').forEach(d=>d.classList.toggle('cur', d.dataset.s===P.step));
+}
+app.addEventListener('change', e=>{ if(e.target.id==='ori') P.oi=+e.target.value; if(e.target.id==='dst') P.di=+e.target.value; });
+app.addEventListener('input', e=>{ if(e.target.id==='plate'){ P.plate=e.target.value.toUpperCase(); P.err=''; } });
+app.addEventListener('click', async e=>{
+  const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const a = b.dataset.a;
+  if (a==='abon'){ P.abon=!P.abon; renderApp(); }
+  if (a==='find'){ P.rec = await API.recommend(P.oi, P.di, T, P.abon); P.step='rec'; renderApp(); }
+  if (a==='back'){ P.step = ORDER[Math.max(0, ORDER.indexOf(P.step)-1)]; if (P.step==='rec') P.res=null; renderApp(); }
+  if (a==='toRes'){ P.res=null; P.step='res'; renderApp(); }
+  if (a==='reserve'){
+    const v = P.plate.replace(/\s+/g,' ').trim();
+    if (!/^(B ?\d{2,3}|[A-Z]{2} ?\d{2}) ?[A-Z]{3}$/.test(v)){ P.err='Scrie numărul ca pe plăcuță, de exemplu IS 23 OKC sau B 123 ABC.'; renderApp(); return; }
+    P.plate = v;
+    try { P.res = await API.reserve(P.rec.gate.id, v); } catch(e){ P.err = e.message; renderApp(); return; }
+    P.resEnd = Date.now()+20*60000; renderApp();
+  }
+  if (a==='arrive'){
+    try { P.entry = await API.gateEntry(P.plate, P.abon); } catch(e){ console.warn(e); P.entry = await LOCAL_API.gateEntry(P.plate, P.abon); }
+    P.step='gate'; renderApp();
+    const ids=['c1','c2','c3','c4'];
+    ids.forEach((id,i)=> setTimeout(()=>{ document.getElementById(id)?.classList.add('ok'); if(i===1) document.getElementById('barrier')?.classList.add('up');
+      if(i===3){ const btn=document.getElementById('toTram'); if(btn){btn.disabled=false;btn.style.opacity=1;} } }, 450+i*550));
+  }
+  if (a==='toTram'){ P.step='tram'; P.tramEnd = Date.now() + (2*60+40)*1000; renderApp(); }
+  if (a==='restart'){ P.step='form'; P.res=null; P.rec=null; P.entry=null; renderApp(); }
+});
+setInterval(()=>{ const cd = document.getElementById('cd'); if(!cd) return;
+  const end = P.step==='tram'?P.tramEnd:P.resEnd, left = Math.max(0,end-Date.now());
+  cd.textContent = String(Math.floor(left/60000)).padStart(2,'0')+':'+String(Math.floor(left/1000)%60).padStart(2,'0'); }, 1000);
+subs.push(()=>{ if (P.step==='form') renderApp(); else app.querySelector('.sbar span').textContent = fmtT(T); });
+
+/* ---------- Dispeceratul ---------- */
+let selGate = 'pacurari';
+function cumulative(t){ // mașini oprite la porți de la 05:00 până la t (vârful atins × rotație)
+  return GATES.reduce((s,g)=>{ let mx=0; for(let x=300;x<=t;x+=10) mx=Math.max(mx,parkedAt(g,x)); return s + mx*1.12; },0);
+}
+function renderDash(){
+  if (document.getElementById('paneCity').hidden) return;
+  const parked = GATES.reduce((s,g)=>s+parkedAt(g,T),0);
+  const st = CACHE.stats && Math.abs(CACHE.stats.t - T) <= 15 ? CACHE.stats : null;
+  const cum = st ? st.oprite_azi : cumulative(T), trips = st ? st.calatorii_ctp_noi : cum*1.3*2, co2 = st ? st.co2_evitat_t : cum*14*0.15/1000;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><b>${nf(parked)}</b><span>mașini parcate acum la porți, din ${nf(CAP)} locuri</span></div>
+    <div class="kpi"><b>${nf(cum)}</b><span>mașini oprite azi în afara centrului</span></div>
+    <div class="kpi"><b>${nf(trips)}</b><span>călătorii CTP noi generate azi</span></div>
+    <div class="kpi"><b>${co2.toFixed(1).replace('.',',')} t</b><span>CO₂ evitat azi în oraș (estimare)</span></div>`;
+  const dm = document.getElementById('dashMap'); dm.innerHTML = mapSVG({live:true, sel:selGate});
+  document.getElementById('gtable').innerHTML = `<thead><tr><th>Poarta</th><th>Ocupare</th><th class="r">Libere</th><th class="r">Stare</th></tr></thead><tbody>` +
+    GATES.map(g=>{ const o=occ(g,T); return `<tr data-gate="${g.id}" class="${g.id===selGate?'sel':''}"><td><b>${g.nume}</b><div class="tiny muted">${g.dir}</div></td>
+      <td><div class="minibar"><span style="width:${o*100}%;background:${stColor(o)}"></span></div><span class="tiny muted num">${Math.round(o*100)}%</span></td>
+      <td class="r"><b>${freeAt(g,T)}</b><span class="tiny muted"> / ${g.loc}</span></td><td class="r"><span class="pill p-${stCls(o)}">${stTxt(o)}</span></td></tr>`; }).join('') + `</tbody>`;
+  const al = [];
+  GATES.forEach(g=>{ const o=occ(g,T), f=fillTime(g);
+    if (o>=.93) al.push(`<div class="ai"><b>AI</b><span>${g.nume} e aproape plină. Panourile de pe drumul dinspre ${esc(g.din.split(' · ')[0])} trimit acum mașinile la ${GATES.find(x=>x.id===NEIGH[g.id]).nume}.</span></div>`);
+    else if (f && o>=.6 && f-T<=60 && f>T) al.push(`<div class="ai"><b>AI</b><span>Predicție: ${g.nume} se umple în jurul orei ${fmtT(f)}. Recomandare: o cursă CTP în plus de la capătul de linie.</span></div>`);
+  });
+  const fa = CACHE.forecast && Math.abs(CACHE.forecast.t - T) <= 15 ? CACHE.forecast.alerte : null;
+  if (fa){ al.length = 0; fa.forEach(a => al.push(`<div class="ai"><b>AI</b><span>${esc(a.mesaj)}</span></div>`)); }
+  document.getElementById('alerts').innerHTML = al.slice(0,3).join('') || `<p class="small muted">Nicio alertă. Toate porțile au locuri suficiente.</p>`;
+  const g = GATES.find(x=>x.id===selGate);
+  document.getElementById('vmsTitle').textContent = `Ce afișează acum panoul de la poarta ${g.nume}`;
+  document.getElementById('dashVms').innerHTML = vmsHTML(g, T);
+  drawChart();
+}
+function drawChart(){
+  const W=560,H=230,L=44,R=14,Tp=14,B=28, x0=300, x1=1380;
+  const sx = t => L + (t-x0)/(x1-x0)*(W-L-R), sy = v => Tp + (1 - v/CAP)*(H-Tp-B);
+  const pts = []; for(let t=x0;t<=x1;t+=10) pts.push([t, GATES.reduce((s,g)=>s+parkedAt(g,t),0)]);
+  const line = pts.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)).join(' ');
+  const area = line + ` L${sx(x1)} ${sy(0)} L${sx(x0)} ${sy(0)} Z`;
+  const now = GATES.reduce((s,g)=>s+parkedAt(g,T),0);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafic: mașini parcate la porți în timpul zilei">`;
+  [0,500,1000,1500].forEach(v=>{ s+=`<line class="c-grid" x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}"/><text class="c-axis" x="${L-6}" y="${sy(v)+4}" text-anchor="end">${nf(v)}</text>`; });
+  [360,540,720,900,1080,1260].forEach(t=>{ s+=`<text class="c-axis" x="${sx(t)}" y="${H-8}" text-anchor="middle">${fmtT(t)}</text>`; });
+  s += `<line class="c-cap" x1="${L}" x2="${W-R}" y1="${sy(CAP)}" y2="${sy(CAP)}"/>`;
+  s += `<path class="c-area" d="${area}"/><path class="c-lineS" d="${line}"/>`;
+  s += `<line class="c-now" x1="${sx(T)}" x2="${sx(T)}" y1="${Tp}" y2="${sy(0)}"/><circle class="c-dot" cx="${sx(T)}" cy="${sy(now)}" r="6"/>`;
+  const lx = sx(T) > W-120 ? sx(T)-10 : sx(T)+10;
+  s += `<text class="c-lbl" x="${lx}" y="${Math.max(Tp+12, sy(now)-12)}" text-anchor="${sx(T)>W-120?'end':'start'}">${nf(now)} mașini</text></svg>`;
+  document.getElementById('chart').innerHTML = s;
+}
+document.getElementById('paneCity').addEventListener('click', e=>{
+  const t = e.target.closest('[data-gate]'); if (t){ selGate = t.dataset.gate; renderDash(); }
+});
+document.getElementById('paneCity').addEventListener('keydown', e=>{
+  const t = e.target.closest('[data-gate]'); if (t && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); selGate = t.dataset.gate; renderDash(); }
+});
+subs.push(renderDash);
+
+document.querySelectorAll('[role=tab]').forEach(b=> b.onclick = ()=>{
+  document.querySelectorAll('[role=tab]').forEach(x=>x.setAttribute('aria-selected', x===b));
+  document.getElementById('paneDriver').hidden = b.dataset.tab!=='driver';
+  document.getElementById('paneCity').hidden = b.dataset.tab!=='city';
+  renderDash();
+});
+
+/* ---------- Simulatorul de impact ---------- */
+const SL = [
+  {id:'porti', l:'Porți deschise', min:1, max:6, step:1, v:6, f:v=>v, hint:'Pilotul începe cu una. Ținta este șase.'},
+  {id:'locuri', l:'Locuri pe poartă', min:100, max:800, step:50, v:300, f:v=>v, hint:'O parcare de suprafață medie are 200–500 de locuri.'},
+  {id:'ocup', l:'Ocupare medie în zilele lucrătoare', min:30, max:95, step:5, v:75, f:v=>v+'%', hint:'Cât de plină e poarta, în medie.'},
+  {id:'km', l:'Km evitați în oraș, per mașină și zi', min:4, max:24, step:1, v:12, f:v=>v+' km', hint:'Drumul dus-întors de la poartă până în centru și înapoi.'},
+  {id:'pers', l:'Persoane în mașină', min:1, max:2.5, step:.1, v:1.3, f:v=>v.toFixed(1).replace('.',','), hint:'Fiecare devine pasager CTP, dus-întors.'},
+  {id:'cost', l:'Cost amenajare pe loc de parcare', min:1000, max:10000, step:500, v:3000, f:v=>nf(v)+' €', hint:'Ipoteză de lucru. Trebuie verificată cu proiectanți.'}
+];
+const sv = {}; SL.forEach(s=>sv[s.id]=s.v);
+document.getElementById('sliders').innerHTML = SL.map(s=>`<div class="sl"><div class="top"><label for="s_${s.id}">${s.l}</label><output id="o_${s.id}">${s.f(s.v)}</output></div>
+  <input type="range" id="s_${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${s.v}"><span class="hint">${s.hint}</span></div>`).join('');
+document.getElementById('sliders').addEventListener('input', e=>{
+  const s = SL.find(x=>'s_'+x.id===e.target.id); if(!s) return;
+  sv[s.id] = +e.target.value; document.getElementById('o_'+s.id).textContent = s.f(sv[s.id]); renderImpact();
+});
+function renderImpact(){
+  const ROT=1.1, ZILE=250, CO2=0.15;
+  const cars = sv.porti*sv.locuri*(sv.ocup/100)*ROT;
+  const share = cars/86000*100;
+  const kmY = cars*sv.km*ZILE, co2 = kmY*CO2/1000;
+  const trips = cars*sv.pers*2*ZILE;
+  const inv = sv.porti*sv.locuri*sv.cost;
+  const perCar = inv/cars;
+  document.getElementById('outs').innerHTML = `
+    <div class="out hero-out"><b>${nf(cars)} mașini pe zi</b><span>rămân în afara centrului, adică ${share.toFixed(1).replace('.',',')}% din cele ~86.000 care intră zilnic în Iași</span></div>
+    <div class="out"><b>${nf(co2)} t</b><span>CO₂ evitat pe an</span></div>
+    <div class="out"><b>${(kmY/1e6).toFixed(1).replace('.',',')} mil. km</b><span>parcurși cu mașina în oraș în minus, pe an</span></div>
+    <div class="out"><b>${(trips/1e6).toFixed(2).replace('.',',')} mil.</b><span>călătorii CTP noi pe an</span></div>
+    <div class="out"><b>${(inv/1e6).toFixed(2).replace('.',',')} mil. €</b><span>investiție în parcări (${nf(perCar)} € pentru fiecare mașină scoasă zilnic din trafic)</span></div>`;
+  document.getElementById('formula').innerHTML =
+    `mașini/zi = porți × locuri × ocupare × ${String(ROT).replace('.',',')} (rotație: unele locuri se folosesc de două ori pe zi)<br>`+
+    `CO₂/an = mașini × km × ${ZILE} zile lucrătoare × ${String(CO2).replace('.',',')} kg/km (ipoteză pentru un parc auto vechi)<br>`+
+    `călătorii CTP/an = mașini × persoane × 2 (dus-întors) × ${ZILE} zile<br>`+
+    `investiție = porți × locuri × cost pe loc (fără teren, camere și panouri)`;
+}
+renderImpact();
+
+/* ---------- Sincronizarea cu backendul ---------- */
+function arataStare(){
+  const el = document.getElementById('srv'); if (!el) return;
+  el.classList.toggle('on', ONLINE);
+  el.textContent = ONLINE ? 'conectat la server · model AI' : 'simulare locală';
+  el.title = ONLINE ? 'Datele vin de la backend: simulatorul de trafic și modelul de predicție.'
+                    : 'Serverul nu răspunde. Demo-ul rulează cu simularea din pagină.';
+}
+let ultimaCronologie = '';
+async function reimprospateaza(fortat){   // ocuparea pe toată ziua: hartă, tabel, grafic, panouri
+  if (!ONLINE) return;
+  try {
+    const tl = await api('/api/timeline'), semn = JSON.stringify(tl.porti);
+    if (!fortat && semn === ultimaCronologie) return;      // nimic nou: nu redesenăm (nu închidem meniurile deschise)
+    ultimaCronologie = semn; CACHE.timeline = tl;
+    heroTick(); renderDash(); if (P.step === 'form') renderApp();
+    cereDatePentruOra();
+  } catch(e){ if (!(e instanceof ApiError)) treciOffline(e); }
+}
+let inZbor = false, deCerut = false;
+async function cereDatePentruOra(){       // prognoza AI și indicatorii pentru ora din bara de timp
+  if (!ONLINE) return;
+  if (inZbor){ deCerut = true; return; }
+  inZbor = true;
+  try {
+    const t = T, [f, s] = await Promise.all([api(`/api/forecast?t=${t}`), api(`/api/stats?t=${t}`)]);
+    CACHE.forecast = f; CACHE.stats = s;
+    renderDash();
+    if (P.step === 'res' && P.res) renderApp();
+  } catch(e){ if (!(e instanceof ApiError)) treciOffline(e); }
+  finally { inZbor = false; if (deCerut){ deCerut = false; cereDatePentruOra(); } }
+}
+async function conecteazaBackend(){
+  if (BACKEND !== null) try { ONLINE = (await api('/api/health')).stare === 'ok'; } catch(e){ ONLINE = false; }
+  arataStare();
+  if (ONLINE) await reimprospateaza(true);
+}
+subs.push(cereDatePentruOra);
+setInterval(() => reimprospateaza(false), 20000);
+
+setT(510);
+renderApp();
+conecteazaBackend();
+</script>
+
+</body></html>
