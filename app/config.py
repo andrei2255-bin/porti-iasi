@@ -30,6 +30,9 @@ ZILE_ISTORIC = int(os.getenv("PORTI_ZILE_ISTORIC", "120"))   # câte zile de ist
 TARIF_FARA_CARD_ORA = 5     # lei/oră, fără card CTP
 CARD_ORE_GRATIS = 2         # ore gratuite cu card CTP valid
 CARD_TARIF_ORA = 3          # lei/oră cu card CTP, după orele gratuite
+ORE_MIN = 1                 # minimul de ore pe care le poate alege șoferul
+ORE_MAX = 12                # maximul de ore
+ORE_PAS = 1                 # pasul (din oră în oră)
 ORE_IMPLICIT = 8            # durata presupusă dacă șoferul nu alege altceva (o zi de lucru)
 # Cost reprezentativ P+R pentru comparația „prin poartă vs. cu mașina” din recomandare (un drum).
 # Tariful real pe ore (de mai sus) se aplică la rezervare și plată.

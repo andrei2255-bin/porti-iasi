@@ -26,8 +26,8 @@ from starlette.staticfiles import StaticFiles
 
 from . import anpr, db, istoric, predictie
 from .config import (CAPACITATE_TOTALA, CARD_ORE_GRATIS, CARD_TARIF_ORA, CO2_KG_PE_KM, DESTINATII, DIR_STATIC,
-                     KM_EVITATI_PE_MASINA, ORE_IMPLICIT, ORIGINI, PAS, PERSOANE_PE_MASINA, PORTI, PORTI_DUPA_ID,
-                     PRAG_PLIN, REZERVARE_MIN, TARIF_FARA_CARD_ORA, VECINI, ZI_START)
+                     KM_EVITATI_PE_MASINA, ORE_IMPLICIT, ORE_MAX, ORE_MIN, ORE_PAS, ORIGINI, PAS, PERSOANE_PE_MASINA,
+                     PORTI, PORTI_DUPA_ID, PRAG_PLIN, REZERVARE_MIN, TARIF_FARA_CARD_ORA, VECINI, ZI_START)
 from .logica import recomanda
 from .plata import cod_tranzactie, cost_sedere, explica_tarif, normalizeaza_card, verifica_card
 from .numere import corecteaza_ocr, normalizeaza
@@ -83,7 +83,8 @@ class CerereRezervare(BaseModel):
     t: Optional[int] = Field(None, ge=0, le=1439, description=_DESC_T)
     abonament: bool = Field(True, description="Șoferul are card/abonament CTP (dacă nu dă card_ctp)")
     card_ctp: Optional[str] = Field(None, description="Numărul cardului CTP (demo). Dacă e valid, 2 ore gratuite.")
-    ore: float = Field(float(ORE_IMPLICIT), ge=0.5, le=24, description="Durata estimată de ședere, în ore")
+    ore: float = Field(float(ORE_IMPLICIT), ge=ORE_MIN, le=ORE_MAX,
+                       description=f"Durata estimată de ședere, în ore (între {ORE_MIN} și {ORE_MAX})")
     zi: Optional[date] = Field(None, description=_DESC_ZI)
 
 
@@ -189,7 +190,8 @@ async def ctp_verifica(request: Request, corp: CerereCard):
     """Verifică dacă numărul de card CTP e valid. Demo: compară cu o listă de carduri de test."""
     with db.conexiune() as con:
         rez = verifica_card(con, corp.card)
-    rez["tarif"] = {"fara_card_ora": TARIF_FARA_CARD_ORA, "ore_gratis": CARD_ORE_GRATIS, "cu_card_ora": CARD_TARIF_ORA}
+    rez["tarif"] = {"fara_card_ora": TARIF_FARA_CARD_ORA, "ore_gratis": CARD_ORE_GRATIS, "cu_card_ora": CARD_TARIF_ORA,
+                    "ore_min": ORE_MIN, "ore_max": ORE_MAX, "ore_pas": ORE_PAS, "ore_implicit": ORE_IMPLICIT}
     return rez
 
 

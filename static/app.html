@@ -40,6 +40,10 @@ select,input{width:100%;font:inherit;padding:12px;border-radius:12px;border:1.5p
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:600;color:var(--ink)}
 .chip[aria-pressed=true]{background:var(--sign);border-color:var(--sign);color:var(--sign-ink)}
+.stepper{display:flex;align-items:center;gap:14px;justify-content:space-between}
+.step{width:52px;height:52px;flex:none;border-radius:14px;border:0;background:var(--sign);color:var(--sign-ink);font-size:1.7rem;font-weight:700;line-height:1}
+.step:disabled{opacity:.35}
+.oreval{flex:1;text-align:center}.oreval b{font-size:2rem}.oreval span{color:var(--muted)}
 .gate{background:var(--sign);color:var(--sign-ink);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .gate h2{margin:0;font-size:1.5rem}.big{font-size:2.3rem;font-weight:900;line-height:1}
 .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}.bar span{display:block;height:100%}
@@ -78,10 +82,11 @@ const ORIGINI = ['Lețcani / Podu Iloaiei','Târgu Frumos','Miroslava','Ciurea /
 const DEST = ['Piața Unirii','Palas','UAIC (Copou)','Spitalul Sf. Spiridon','Gara','Tătărași'];
 const ORE = [['acum',null],['07:30',450],['08:30',510],['13:00',780],['17:30',1050]];
 const mem = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('pi_' + k)); localStorage.setItem('pi_' + k, JSON.stringify(v)); } catch(e){ return null; } };
-const DURATE = [['2 h', 2], ['4 h', 4], ['8 h', 8], ['Toată ziua', 10]];
 const TARIF = { faraCardOra: 5, oreGratis: 2, cuCardOra: 3 };   // demo; identic cu serverul
+const ORE_MIN = 1, ORE_MAX = 12, ORE_PAS = 1;                   // identic cu config.py
+const clampOre = h => Math.min(ORE_MAX, Math.max(ORE_MIN, Math.round(h / ORE_PAS) * ORE_PAS));
 const S = { tab:'drum', pas:'form', oi: mem('oi') ?? 0, di: mem('di') ?? 0, abon: mem('abon') ?? true, plate: mem('plate') || 'IS 23 OKC',
-            ora: mem('ora') ?? 510, ore: mem('ore') ?? 8, cardCtp: mem('cardCtp') ?? 'CTP1001', cardStare: null,
+            ora: mem('ora') ?? 510, ore: clampOre(mem('ore') ?? 8), cardCtp: mem('cardCtp') ?? 'CTP1001', cardStare: null,
             rec:null, rez:null, rezEnd:0, intrare:null, err:'', istoric: mem('istoric') || [] };
 const areCard = () => !!(S.cardStare && S.cardStare.valid);
 const pretClient = ore => areCard() ? Math.max(0, ore - TARIF.oreGratis) * TARIF.cuCardOra : ore * TARIF.faraCardOra;
@@ -141,7 +146,12 @@ function vRez(){
       ${stareCard}
       <span class="small">Carduri de test: CTP1001 · 1234 1234 1234 1234. Fără card, tariful e ${TARIF.faraCardOra} lei/oră.</span></div>
     <div class="card"><label>Cât timp stai?</label>
-      <div class="chips">${DURATE.map(([n,h])=>`<button class="chip" data-ore="${h}" aria-pressed="${S.ore===h}">${n}</button>`).join('')}</div></div>
+      <div class="stepper">
+        <button class="step" data-a="oreMinus" aria-label="mai puține ore"${S.ore<=ORE_MIN?' disabled':''}>−</button>
+        <div class="oreval"><b>${(''+S.ore).replace('.',',')}</b> <span>ore</span></div>
+        <button class="step" data-a="orePlus" aria-label="mai multe ore"${S.ore>=ORE_MAX?' disabled':''}>+</button>
+      </div>
+      <span class="small">Între ${ORE_MIN} și ${ORE_MAX} ore. Alege cât stai; costul se calculează pe ore.</span></div>
     <div class="card"><div class="row"><span>Loc păstrat</span><b>20 min</b></div>
       <div class="row"><span>Tarif</span><b>${card?`${TARIF.oreGratis} h gratis + ${TARIF.cuCardOra} lei/h`:`${TARIF.faraCardOra} lei/oră`}</b></div>
       <div class="row" style="font-size:1.15rem"><b>De plată</b><b>${pret===0?'Gratuit':lei(pret)}</b></div>
@@ -247,11 +257,12 @@ document.addEventListener('click', async e => {
   const nav = e.target.closest('nav button'); if (nav) return seteaza({ tab: nav.dataset.tab });
   if (e.target.id === 'inapoi') return seteaza({ pas: S.pas === 'rez' ? 'rec' : 'form', err:'' });
   const ch = e.target.closest('[data-ora]'); if (ch){ const v = ch.dataset.ora === 'null' ? null : +ch.dataset.ora; mem('ora', v); return seteaza({ ora: v }); }
-  const co = e.target.closest('[data-ore]'); if (co){ mem('ore', S.ore = +co.dataset.ore); return seteaza({ err:'' }); }
   const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
   const a = b.dataset.a;
   try {
     if (a === 'abon'){ mem('abon', S.abon = !S.abon); deseneaza(); }
+    if (a === 'oreMinus'){ mem('ore', S.ore = clampOre(S.ore - ORE_PAS)); return seteaza({ err:'' }); }
+    if (a === 'orePlus'){ mem('ore', S.ore = clampOre(S.ore + ORE_PAS)); return seteaza({ err:'' }); }
     if (a === 'refresh') deseneaza();
     if (a === 'cauta'){ b.disabled = true; b.textContent = 'Caut…';
       const rec = await api('/api/recommend', { origine:S.oi, destinatie:S.di, abonament:S.abon, ...(S.ora!=null && { t:S.ora }) });

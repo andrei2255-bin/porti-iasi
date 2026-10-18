@@ -39,6 +39,25 @@ def test_card_invalid_cade_pe_tarif_fara_card(client):
     assert r["are_card"] is False and r["cost"] == 20     # 4 × 5 lei
 
 
+def test_limitele_de_ore():
+    from app.config import ORE_MAX, ORE_MIN
+    assert ORE_MIN == 1 and ORE_MAX == 12
+
+
+def test_ore_in_afara_limitelor_sunt_respinse(client):
+    assert client.post("/api/reservations",
+                       json={"poarta": "cug", "numar": "IS 48 ORE", "t": 500, "ore": 24}).status_code == 422
+    assert client.post("/api/reservations",
+                       json={"poarta": "cug", "numar": "IS 49 ORE", "t": 500, "ore": 0}).status_code == 422
+    # valoare aleasă liber în interval: 6 ore, fără card => 30 lei
+    r = client.post("/api/reservations",
+                    json={"poarta": "cug", "numar": "IS 50 ORE", "t": 500, "abonament": False, "ore": 6}).json()
+    assert r["ore"] == 6 and r["cost"] == 30
+    # verifica întoarce și limitele
+    t = client.post("/api/ctp/verifica", json={"card": "CTP1001"}).json()["tarif"]
+    assert t["ore_min"] == 1 and t["ore_max"] == 12
+
+
 def test_plata_dubla_si_inexistenta(client):
     rez = client.post("/api/reservations",
                      json={"poarta": "bucium", "numar": "IS 46 PAY", "t": 500, "abonament": False, "ore": 4}).json()
