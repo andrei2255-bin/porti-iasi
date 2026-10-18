@@ -25,6 +25,15 @@ def test_recomandarea_ocoleste_poarta_cu_lucrari(client):
     assert rec["lucrari_nota"] and "semi-închis" in rec["lucrari_nota"]
 
 
+def test_zona_plina_e_semnalata(client):
+    # la 08:30, din Rediu, și Copou (lucrări) și vecina Păcurari sunt pline => zona plină
+    rec = client.post("/api/recommend", json={"origine": 6, "destinatie": 0, "t": 510}).json()
+    assert rec["zona_plina"] is True
+    # Ciurea are cerere mică și nu se umple niciodată => zona nu e plină
+    rec2 = client.post("/api/recommend", json={"origine": 3, "destinatie": 0, "t": 660}).json()
+    assert rec2["gate"]["id"] == "ciurea" and rec2["zona_plina"] is False
+
+
 def test_concert_palas_apare_seara(client):
     f = client.get("/api/forecast", params={"t": 1140}).json()   # 19:00
     assert any("Palas" in e["nume"] for e in f["context"]["evenimente"])

@@ -178,6 +178,8 @@ async def recommend(request: Request, corp: CerereRecomandare):
         lu = next((x for x in ctx.lucrari if x.poarta == naturala), None)
         if lu:
             rec["lucrari_nota"] = f"{lu.nume}: P+R {PORTI_DUPA_ID[naturala]['nume']} e semi-închis azi."
+    # dacă până și poarta recomandată e plină (toate din zonă pline), semnalăm
+    rec["zona_plina"] = stare[rec["gate"]]["ocupare"] >= PRAG_PLIN
     rec["gate"] = poarta_api(rec["gate"], stare[rec["gate"]])
     if rec["redirected"]:
         rec["redirected"] = poarta_api(rec["redirected"], stare[rec["redirected"]])

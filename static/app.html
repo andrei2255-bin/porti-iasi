@@ -124,12 +124,13 @@ function vRec(){
   const r = S.rec, g = r.gate, win = r.pr <= r.car, p = r.prognoza;
   const motiv = r.lucrari_nota ? esc(r.lucrari_nota) + ` Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.`
     : `P+R ${r.redirected?esc(r.redirected.nume):''} va fi plină când ajungi. Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.`;
-  return `${r.redirected?`<div class="ai"><b>AI</b><span>${motiv}</span></div>`
+  return `${r.zona_plina?`<div class="ai" style="background:var(--amber-soft)"><b>!</b><span>Toate porțile din zonă sunt aproape pline acum. Poți rezerva dacă mai e loc, încerca mai târziu sau alege altă destinație.</span></div>`:''}
+    ${r.redirected?`<div class="ai"><b>AI</b><span>${motiv}</span></div>`
      : p?`<div class="ai"><b>AI</b><span>Când ajungi (${esc(p.ora_sosire_text)}), estimăm ~${p.libere_la_sosire} locuri libere.</span></div>`:''}
   <div class="gate"><span class="small" style="color:inherit;opacity:.85">Poarta recomandată · ${esc(g.dir)}</span>
     <div class="row"><h2>P+R ${esc(g.nume)}</h2><div style="text-align:right"><div class="big">${g.libere}</div><span style="font-size:.75rem;opacity:.85">libere din ${g.loc}</span></div></div>
     <div class="bar"><span style="width:${g.ocupare*100}%;background:${g.ocupare>=.93?'#FF8A80':g.ocupare>=.75?'#FFD166':'#7BE3A8'}"></span></div></div>
-  <div class="cmp"><div class="${win?'win':''}"><span class="small">Prin poartă</span><div class="t">${r.pr} min</div><span class="small">${S.abon?'parcare gratuită':'bilet P+R 8 lei'} · ~${r.prCost} lei</span></div>
+  <div class="cmp"><div class="${win?'win':''}"><span class="small">Prin poartă</span><div class="t">${r.pr} min</div><span class="small">${S.abon?'card CTP · 2h gratis':TARIF.faraCardOra+' lei/oră'} · ~${r.prCost} lei</span></div>
     <div class="${win?'':'win'}"><span class="small">Cu mașina în centru</span><div class="t">${r.car} min</div><span class="small">~${r.search} min cauți loc · ~${r.carCost} lei</span></div></div>
   <div class="card">
     <div class="leg"><span>Condu până la ${esc(g.nume)}</span><b>${r.legs.toGate} min</b></div>
