@@ -377,9 +377,9 @@ footer .bot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;b
     <div class="mapbox" id="solMap"></div>
     <div class="steps">
       <div class="step"><span class="k">1</span><div><h3>Vezi locurile libere de pe drum</h3><p>Panourile de la intrare și aplicația îți arată câte locuri sunt libere la fiecare poartă și cât faci până în centru cu mașina, față de CTP.</p></div></div>
-      <div class="step"><span class="k">2</span><div><h3>Bariera te recunoaște</h3><p>Camera citește numărul mașinii. Dacă ai abonament CTP valid, bariera se ridică și parcarea e gratuită. Fără abonament, plătești un bilet P+R care include și călătoria.</p></div></div>
+      <div class="step"><span class="k">2</span><div><h3>Bariera te recunoaște</h3><p>Camera citește numărul mașinii. Cu card CTP valid ai primele 2 ore gratuite, apoi 3 lei/oră. Fără card, parcarea costă 5 lei/oră — un stimulent clar să folosești transportul public.</p></div></div>
       <div class="step"><span class="k">3</span><div><h3>Mergi mai departe cu tramvaiul</h3><p>Stația e la câțiva pași. Aplicația îți spune în câte minute pleacă următorul tramvai sau autobuz. Seara, mașina te așteaptă la poartă.</p></div></div>
-      <div class="rule"><b>Regula: cu abonament CTP, parcarea e gratuită</b><span class="small">E modelul care funcționează deja la Brașov.<sup>4</sup> Cine nu are abonament plătește un bilet P+R (parcare pe toată ziua plus două călătorii).</span></div>
+      <div class="rule"><b>Regula: cu card CTP, primele 2 ore sunt gratuite</b><span class="small">Park &amp; Ride funcționează deja la Brașov.<sup>4</sup> Tariful mic cu card (2 ore gratis, apoi 3 lei/oră) îi mută pe șoferi pe transportul public; fără card, 5 lei/oră.</span></div>
     </div>
   </div>
 </section>
@@ -575,7 +575,7 @@ const LOCAL_API = {
   // POST /api/reservations {poarta, numar}
   async reserve(gid, plate){ return { id:'R'+Date.now().toString(36).toUpperCase(), gid, plate, minute:20 }; },
   // POST /api/gate-events {numar} -> camera ANPR + verificare abonament CTP
-  async gateEntry(plate, abon){ return { recunoscut:true, abonament:abon, tarif: abon?0:8, sector:'B', loc: 20 + Math.floor(Math.random()*60) }; }
+  async gateEntry(plate, abon){ return { recunoscut:true, permis:true, abonament:abon, platit:true, tarif: abon?0:20, sector:'B', loc: 20 + Math.floor(Math.random()*60), mesaj: abon?'Card CTP valid. Parcare gratuită (2 ore incluse).':'Plată la ieșire.' }; }
 };
 
 /* ---------- Legătura cu backendul ----------
@@ -729,7 +729,7 @@ function vRec(){
       <div class="occbar"><span style="width:${o*100}%;background:${o>=.93?'#FF8A80':o>=.75?'#FFD166':'#7BE3A8'}"></span></div>
     </div>
     <div class="cmp">
-      <div class="${win?'win':''}"><span class="l">Prin poartă</span><span class="t">${r.pr} min</span><span class="d">${P.abon?'parcare gratuită':'bilet P+R 8 lei'} · ~${r.prCost} lei</span></div>
+      <div class="${win?'win':''}"><span class="l">Prin poartă</span><span class="t">${r.pr} min</span><span class="d">${P.abon?'card CTP · 2h gratis':'5 lei/oră'} · ~${r.prCost} lei</span></div>
       <div class="${win?'':'win'}"><span class="l">Cu mașina până în centru</span><span class="t">${r.car} min</span><span class="d">din care ~${r.search} min cauți loc · ~${r.carCost} lei</span></div>
     </div>
     <div class="card"><div class="legs">
@@ -746,7 +746,7 @@ function vRes(){
   if (!P.res) return `<div class="abody">
     <div class="card"><div class="fld"><label for="plate">Numărul mașinii</label><input type="text" id="plate" class="plate" value="${esc(P.plate)}" autocomplete="off"></div>
     ${P.err?`<span class="small" style="color:var(--full)">${esc(P.err)}</span>`:`<span class="small muted">Camera de la barieră recunoaște numărul. Nu ai nevoie de bilet sau de cod.</span>`}</div>
-    <div class="card"><div class="tog"><span>Locul e păstrat</span><b class="num">20 min</b></div><div class="tog"><span>Tarif</span><b>${P.abon?'Gratuit (abonament CTP)':'8 lei · bilet P+R'}</b></div></div>
+    <div class="card"><div class="tog"><span>Locul e păstrat</span><b class="num">20 min</b></div><div class="tog"><span>Tarif</span><b>${P.abon?'Card CTP · 2h gratis, apoi 3 lei/oră':'5 lei/oră'}</b></div></div>
     <button class="pb" data-a="reserve">Confirmă rezervarea</button></div>`;
   const left = Math.max(0, P.resEnd - Date.now()), mm = Math.floor(left/60000), ss = Math.floor(left/1000)%60;
   return `<div class="abody">
@@ -767,9 +767,9 @@ function vGate(){
     <div class="barrier" id="barrier"><div class="road"></div><div class="post"></div><div class="arm"></div><span class="cam">CAM 01 · ${esc(P.plate)}</span></div>
     <div class="card checks">
       <div class="chk" id="c1"><i>✓</i><span>Număr recunoscut: <b class="plate">${esc(P.plate)}</b></span></div>
-      <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Abonament CTP valid':'Bilet P+R plătit în aplicație'}</span></div>
-      <div class="chk" id="c3"><i>✓</i><span>${e.tarif?`Tarif: ${e.tarif} lei, include 2 călătorii`:'Parcare gratuită azi'}</span></div>
-      <div class="chk" id="c4"><i>✓</i><span>Loc alocat: sector ${e.sector}, locul ${e.loc}</span></div>
+      <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Card CTP valid':(e.platit?'Plată confirmată la rezervare':'Fără card CTP')}</span></div>
+      <div class="chk" id="c3"><i>✓</i><span>${e.tarif>0?(e.platit?`Plătit: ${e.tarif} lei`:`${e.tarif} lei de plată la ieșire`):'Parcare gratuită (card CTP)'}</span></div>
+      ${e.sector?`<div class="chk" id="c4"><i>✓</i><span>Loc alocat: sector ${esc(e.sector)}, locul ${e.loc}</span></div>`:''}
     </div>
     <button class="pb" data-a="toTram" id="toTram" disabled style="opacity:.4">Spre stația CTP</button></div>`;
 }
@@ -780,7 +780,7 @@ function vTram(){
     <div class="card" style="align-items:center;gap:6px"><span class="small muted">Următoarea cursă CTP spre ${esc(r.dname)} pleacă în</span><div class="cd" id="cd">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div><span class="small muted">din stația ${esc(r.gate.nume)} · la 3 min de mers pe jos</span></div>
     <div class="save">
       <div><b>${saved>0?saved+' min':'—'}</b><span>${saved>0?'mai repede decât cu mașina':'ai evitat căutatul de loc'}</span></div>
-      <div><b>${Math.max(0,r.carCost-r.prCost)} lei</b><span>economisiți azi</span></div>
+      <div><b>${(P.res&&P.res.cost>0)?String(P.res.cost).replace('.',',')+' lei':'gratuit'}</b><span>parcare (plată la ieșire)</span></div>
       <div><b>${String(r.co2).replace('.',',')} kg</b><span>CO₂ în minus în centru</span></div>
     </div>
     <div class="card"><span class="small" style="font-weight:700">Seara</span><span class="small muted">Mașina te așteaptă la sector ${P.entry.sector}, locul ${P.entry.loc}. La ieșire, bariera se ridică singură. Te anunțăm dacă pe drumul spre casă e aglomerat.</span></div>

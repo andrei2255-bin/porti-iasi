@@ -79,12 +79,14 @@ def test_bariera_fara_card_nu_zice_card_valid(client):
     assert "Fără card" in e["mesaj"] and "Plătit" in e["mesaj"]
 
 
-def test_bariera_nu_se_ridica_daca_nu_e_platit(client):
+def test_rezervare_neplatita_se_plateste_la_iesire(client):
+    # fără plată în aplicație (ex. flux desktop), bariera se ridică și se plătește la ieșire
     rez = client.post("/api/reservations",
                      json={"poarta": "dancu", "numar": "IS 60 NEP", "t": 500, "abonament": False, "ore": 4}).json()
     assert rez["necesita_plata"] is True
     e = client.post("/api/gate-events", json={"numar": "IS 60 NEP", "t": 510}).json()
-    assert e["permis"] is False and "neplătită" in e["mesaj"]
+    assert e["permis"] is True and e["platit"] is False and "la ieșire" in e["mesaj"]
+    assert e["sector"] in "ABCDEFGHIJ" and 1 <= e["loc"] <= 100   # primește loc, nu „undefined”
 
 
 def test_reset_sterge_si_plata(client):

@@ -342,16 +342,16 @@ def _eveniment_bariera(con, zi: date, t: int, numar: str, poarta: Optional[str],
         platit = bool(rez["platit"])
         tarif = int(round(rez["cost"]))
         lei = f"{rez['cost']:g}".replace(".", ",")
-        if not platit and rez["cost"] > 0:    # ședere de plătit, dar neplătită: bariera nu se ridică
-            return {"recunoscut": True, "permis": False, "numar": numar, "poarta": gid, "abonament": abonament,
-                    "platit": False, "tarif": tarif,
-                    "mesaj": f"Rezervare găsită, dar neplătită ({lei} lei). Finalizează plata în aplicație."}
         if rez["cost"] == 0 and abonament:
             mesaj = f"Card CTP valid. Parcare gratuită ({CARD_ORE_GRATIS} ore incluse)."
-        elif abonament:
+        elif platit and abonament:
             mesaj = f"Card CTP valid. Plătit la rezervare: {lei} lei."
-        else:
+        elif platit:
             mesaj = f"Fără card CTP. Plătit la rezervare: {lei} lei."
+        elif abonament:   # card CTP, dar peste orele gratuite și neplătit în aplicație: plată la ieșire
+            mesaj = f"Card CTP valid. {lei} lei de plată la ieșire ({CARD_ORE_GRATIS} ore gratuite incluse)."
+        else:
+            mesaj = f"Fără card CTP. {lei} lei de plată la ieșire."
     else:
         ab = con.execute("SELECT valabil_pana FROM abonamente_ctp WHERE numar=?", (numar,)).fetchone()
         abonament = ab is not None and ab["valabil_pana"] >= zi.isoformat()
