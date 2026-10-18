@@ -119,34 +119,49 @@ def masini_reale(con: sqlite3.Connection, zi: date, t: int) -> dict[str, int]:
 
 # ---------- ce folosesc endpoint-urile ----------
 
+def _blocat(zi: date) -> dict[str, int]:
+    """Câte locuri sunt blocate de lucrări la fiecare poartă (0 dacă nu sunt lucrări)."""
+    ctx = context_cu_scenariu(zi)
+    return {g["id"]: round(g["loc"] * ctx.fractie_blocata(g["id"])) for g in PORTI}
+
+
 def stare_porti(con: sqlite3.Connection, zi: date, t: int) -> dict[str, dict]:
-    """Pentru fiecare poartă: mașini, ocupare (0–1) și locuri libere la ora t."""
+    """Pentru fiecare poartă: mașini, ocupare (0–1) și locuri libere la ora t.
+    Lucrările (ex. la șine) blochează o parte din locuri, deci capacitatea utilă scade."""
     reale = masini_reale(con, zi, t)
+    blocat = _blocat(zi)
     rez = {}
     for g in PORTI:
-        masini = min(g["loc"], masini_baza(g["id"], zi, t) + reale[g["id"]])
-        rez[g["id"]] = {"masini": masini, "ocupare": masini / g["loc"], "libere": g["loc"] - masini}
+        loc, bl = g["loc"], blocat[g["id"]]
+        cap_ef = max(1, loc - bl)
+        parcate = min(cap_ef, masini_baza(g["id"], zi, t) + reale[g["id"]])
+        rez[g["id"]] = {"masini": parcate, "ocupare": (bl + parcate) / loc, "libere": cap_ef - parcate,
+                        "blocat": bl, "cap_efectiva": cap_ef}
     return rez
 
 
 def cronologie(con: sqlite3.Connection, zi: date) -> dict[str, list[int]]:
-    """Mașinile din fiecare poartă la fiecare 5 minute, cu tot cu cele din demo."""
+    """Mașinile din fiecare poartă la fiecare 5 minute (ocupare fizică, cu lucrări incluse)."""
     baza = cronologie_baza(zi)
+    blocat = _blocat(zi)
     ev, rez = _citeste_reale(con, zi)
-    if not ev and not rez:
-        return {gid: [min(PORTI_DUPA_ID[gid]["loc"], m) for m in v] for gid, v in baza.items()}
     rezultat = {g["id"]: [] for g in PORTI}
     for k in range(NR_SLOTURI):
-        reale = _reale_la(ev, rez, ZI_START + k * PAS)
+        reale = _reale_la(ev, rez, ZI_START + k * PAS) if (ev or rez) else None
         for g in PORTI:
-            rezultat[g["id"]].append(min(g["loc"], baza[g["id"]][k] + reale[g["id"]]))
+            loc, bl = g["loc"], blocat[g["id"]]
+            cap_ef = max(1, loc - bl)
+            extra = reale[g["id"]] if reale else 0
+            rezultat[g["id"]].append(bl + min(cap_ef, baza[g["id"]][k] + extra))
     return rezultat
 
 
 def poarta_api(gid: str, stare: dict) -> dict:
-    """Obiectul „poartă” exact cum îl folosește frontendul (plus ocupare și locuri libere)."""
+    """Obiectul „poartă” exact cum îl folosește frontendul (plus ocupare, locuri libere și lucrări)."""
     g = {k: v for k, v in PORTI_DUPA_ID[gid].items() if k != "cerere"}
-    return {**g, "ocupare": round(stare["ocupare"], 4), "libere": stare["libere"]}
+    bl = stare.get("blocat", 0)
+    return {**g, "ocupare": round(stare["ocupare"], 4), "libere": stare["libere"],
+            "cap_efectiva": stare.get("cap_efectiva", g["loc"]), "blocat": bl, "lucrari": bl > 0}
 
 
 def sector_si_loc(indice: int) -> tuple[str, int]:

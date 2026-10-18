@@ -169,6 +169,14 @@ async def recommend(request: Request, corp: CerereRecomandare):
         stare = stare_porti(con, zi, t)
     prognoza = (lambda gid, t_tinta: _prognoza_la(zi, t, gid, t_tinta)) if PROGNOZATOR.pachet else None
     rec = recomanda(corp.origine, corp.destinatie, t, corp.abonament, stare, prognoza)
+    # dacă poarta firească e sub lucrări (capacitate redusă) și am redirecționat, spunem de ce
+    naturala = ORIGINI[corp.origine][1]
+    rec["lucrari_nota"] = None
+    if rec["redirected"]:
+        ctx = context_cu_scenariu(zi)
+        lu = next((x for x in ctx.lucrari if x.poarta == naturala), None)
+        if lu:
+            rec["lucrari_nota"] = f"{lu.nume}: P+R {PORTI_DUPA_ID[naturala]['nume']} e semi-închis azi."
     rec["gate"] = poarta_api(rec["gate"], stare[rec["gate"]])
     if rec["redirected"]:
         rec["redirected"] = poarta_api(rec["redirected"], stare[rec["redirected"]])
@@ -435,6 +443,12 @@ def _alerte(zi: date, t: int, stare: dict, prognoza: dict) -> list[dict]:
     """Sugestiile pentru dispecerat, ordonate după urgență."""
     alerte = []
     ctx = context_cu_scenariu(zi)
+    for lu in ctx.lucrari:   # lucrări = capacitate redusă toată ziua (ex. șine de tramvai)
+        vecina = PORTI_DUPA_ID[VECINI[lu.poarta]]
+        alerte.append({"poarta": lu.poarta, "tip": "lucrari", "urgenta": 5,
+                       "mesaj": f"{lu.nume}: P+R {PORTI_DUPA_ID[lu.poarta]['nume']} e semi-închis "
+                                f"(capacitate redusă cu {lu.procent_blocat}%). Mașinile sunt trimise la "
+                                f"P+R {vecina['nume']} ({stare[vecina['id']]['libere']} locuri libere)."})
     perechi_pline: set[frozenset] = set()
     for g in PORTI:
         gid, s, p = g["id"], stare[g["id"]], prognoza[g["id"]]

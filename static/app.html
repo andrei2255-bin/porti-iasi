@@ -112,7 +112,9 @@ function vForm(){
 }
 function vRec(){
   const r = S.rec, g = r.gate, win = r.pr <= r.car, p = r.prognoza;
-  return `${r.redirected?`<div class="ai"><b>AI</b><span>P+R ${esc(r.redirected.nume)} va fi plină când ajungi. Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.</span></div>`
+  const motiv = r.lucrari_nota ? esc(r.lucrari_nota) + ` Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.`
+    : `P+R ${r.redirected?esc(r.redirected.nume):''} va fi plină când ajungi. Te trimitem la ${esc(g.nume)}: faci doar 4 minute în plus.`;
+  return `${r.redirected?`<div class="ai"><b>AI</b><span>${motiv}</span></div>`
      : p?`<div class="ai"><b>AI</b><span>Când ajungi (${esc(p.ora_sosire_text)}), estimăm ~${p.libere_la_sosire} locuri libere.</span></div>`:''}
   <div class="gate"><span class="small" style="color:inherit;opacity:.85">Poarta recomandată · ${esc(g.dir)}</span>
     <div class="row"><h2>P+R ${esc(g.nume)}</h2><div style="text-align:right"><div class="big">${g.libere}</div><span style="font-size:.75rem;opacity:.85">libere din ${g.loc}</span></div></div>
@@ -193,10 +195,11 @@ async function vPorti(){
   const t = tParam();
   const [porti, f] = await Promise.all([api('/api/gates?' + t), api('/api/forecast?' + t).catch(() => null)]);
   return `<div class="card list"><div class="row"><b>Locuri libere acum</b><span class="small">${S.ora==null?'ora reală':fmt(S.ora)}</span></div>
-    ${porti.map(g => { const se = f && f.porti[g.id].se_umple_la; return `<div class="g"><b>${esc(g.nume)}</b>
-      <div><div class="mini"><span style="width:${g.ocupare*100}%;background:${culoare(g.ocupare)}"></span></div>${se?`<span class="small">se umple ~${fmt(se)}</span>`:''}</div>
-      <span style="text-align:right"><b>${g.libere}</b><span class="small"> / ${g.loc}</span></span></div>`; }).join('')}</div>
-    ${f && f.alerte.length ? f.alerte.slice(0,2).map(a => `<div class="ai"><b>AI</b><span>${esc(a.mesaj)}</span></div>`).join('') : ''}
+    ${porti.map(g => { const se = f && f.porti[g.id].se_umple_la; const cap = g.lucrari ? g.cap_efectiva : g.loc;
+      return `<div class="g"><b>${esc(g.nume)}${g.lucrari?' <span class="small" style="color:var(--full)">· semi-închis</span>':''}</b>
+      <div><div class="mini"><span style="width:${g.ocupare*100}%;background:${culoare(g.ocupare)}"></span></div>${g.lucrari?'<span class="small">lucrări la șine</span>':(se?`<span class="small">se umple ~${fmt(se)}</span>`:'')}</div>
+      <span style="text-align:right"><b>${g.libere}</b><span class="small"> / ${cap}</span></span></div>`; }).join('')}</div>
+    ${f && f.alerte.length ? f.alerte.slice(0,3).map(a => `<div class="ai"><b>AI</b><span>${esc(a.mesaj)}</span></div>`).join('') : ''}
     <button class="btn alt" data-a="refresh">Actualizează</button>`;
 }
 function vEu(){

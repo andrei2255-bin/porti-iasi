@@ -1,0 +1,6 @@
+{
+  "_nota": "Lucrări care reduc capacitatea unei porți toată ziua (ex. se schimbă șinele de tramvai). O intrare cu \"zi\": \"demo\" se aplică automat în ziua demo-ului, ca prezentarea să meargă indiferent de dată. Altfel, folosiți o dată AAAA-LL-ZZ. procent_blocat = cât la sută din locuri sunt blocate. După modificare, reporniți serverul.",
+  "lucrari": [
+    {"zi": "demo", "poarta": "copou", "nume": "Lucrări la șinele de tramvai (Copou)", "procent_blocat": 50}
+  ]
+}

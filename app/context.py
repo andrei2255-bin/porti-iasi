@@ -12,6 +12,7 @@ import numpy as np
 
 from .surse.calendar_ro import e_vacanta, tip_zi
 from .surse.evenimente import Eveniment, evenimente_planificate, evenimente_sintetice
+from .surse.lucrari import Lucrare, lucrari_zi
 from .surse.meteo import ploaie_zilnica
 
 NUME_TIP_ZI = {0: "zi lucrătoare", 1: "sâmbătă", 2: "duminică / sărbătoare"}
@@ -25,11 +26,17 @@ class ContextZi:
     ploaie_mm: float            # precipitații în ziua respectivă
     evenimente: list[Eveniment] = field(default_factory=list)
     sursa_meteo: str = "estimare"
+    lucrari: list[Lucrare] = field(default_factory=list)   # porți cu capacitate redusă (ex. lucrări la șine)
+
+    def fractie_blocata(self, gid: str) -> float:
+        """Cât din capacitatea porții e blocată de lucrări (0–0,95)."""
+        return min(0.95, sum(lu.fractie for lu in self.lucrari if lu.poarta == gid))
 
     def ca_dict(self) -> dict:
         return {"zi": self.zi.isoformat(), "tip_zi": self.tip_zi, "tip_zi_text": NUME_TIP_ZI[self.tip_zi],
                 "vacanta": self.vacanta, "ploaie_mm": self.ploaie_mm, "sursa_meteo": self.sursa_meteo,
-                "evenimente": [e.ca_dict() for e in self.evenimente]}
+                "evenimente": [e.ca_dict() for e in self.evenimente],
+                "lucrari": [lu.ca_dict() for lu in self.lucrari]}
 
 
 def seed_zi(zi: date) -> int:
@@ -54,4 +61,6 @@ def context_zi(zi: date, *, istoric: bool = False) -> ContextZi:
     evenimente = evenimente_planificate(zi)
     if not evenimente and istoric:
         evenimente = evenimente_sintetice(zi)
-    return ContextZi(zi, tip_zi(zi), e_vacanta(zi), ploaie, evenimente, sursa)
+    # Lucrările se aplică doar la zilele „live” (demo), nu la istoricul de antrenare.
+    lucrari = [] if istoric else lucrari_zi(zi)
+    return ContextZi(zi, tip_zi(zi), e_vacanta(zi), ploaie, evenimente, sursa, lucrari=lucrari)

@@ -55,7 +55,13 @@ def _din_fisier() -> dict[str, tuple]:
 
 
 def evenimente_planificate(zi: date) -> list[Eveniment]:
-    return list(_din_fisier().get(zi.isoformat(), ()))
+    din_fisier = _din_fisier()
+    lista = list(din_fisier.get(zi.isoformat(), ()))
+    # intrările cu "zi": "demo" se aplică automat în ziua demo-ului (indiferent de dată)
+    from ..timp import zi_demo
+    if zi == zi_demo():
+        lista += list(din_fisier.get("demo", ()))
+    return lista
 
 
 def evenimente_sintetice(zi: date) -> list[Eveniment]:
