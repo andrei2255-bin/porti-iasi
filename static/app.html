@@ -78,8 +78,14 @@ const ORIGINI = ['Lețcani / Podu Iloaiei','Târgu Frumos','Miroslava','Ciurea /
 const DEST = ['Piața Unirii','Palas','UAIC (Copou)','Spitalul Sf. Spiridon','Gara','Tătărași'];
 const ORE = [['acum',null],['07:30',450],['08:30',510],['13:00',780],['17:30',1050]];
 const mem = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('pi_' + k)); localStorage.setItem('pi_' + k, JSON.stringify(v)); } catch(e){ return null; } };
+const DURATE = [['2 h', 2], ['4 h', 4], ['8 h', 8], ['Toată ziua', 10]];
+const TARIF = { faraCardOra: 5, oreGratis: 2, cuCardOra: 3 };   // demo; identic cu serverul
 const S = { tab:'drum', pas:'form', oi: mem('oi') ?? 0, di: mem('di') ?? 0, abon: mem('abon') ?? true, plate: mem('plate') || 'IS 23 OKC',
-            ora: mem('ora') ?? 510, rec:null, rez:null, rezEnd:0, intrare:null, err:'', istoric: mem('istoric') || [] };
+            ora: mem('ora') ?? 510, ore: mem('ore') ?? 8, cardCtp: mem('cardCtp') ?? 'CTP1001', cardStare: null,
+            rec:null, rez:null, rezEnd:0, intrare:null, err:'', istoric: mem('istoric') || [] };
+const areCard = () => !!(S.cardStare && S.cardStare.valid);
+const pretClient = ore => areCard() ? Math.max(0, ore - TARIF.oreGratis) * TARIF.cuCardOra : ore * TARIF.faraCardOra;
+const lei = n => (Number.isInteger(n) ? n : n.toFixed(2)).toString().replace('.', ',') + ' lei';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt = m => String(Math.floor(m/60)%24).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
@@ -122,20 +128,56 @@ function vRec(){
   <button class="btn" data-a="laRez">Rezervă un loc la ${esc(g.nume)}</button>`;
 }
 function vRez(){
-  if (!S.rez) return `<div class="card"><label for="plate">Numărul mașinii</label><input id="plate" class="plate" value="${esc(S.plate)}" autocomplete="off" autocapitalize="characters">
-    <span class="small">Camera de la barieră recunoaște numărul. Nu ai nevoie de bilet.</span>${S.err?`<span class="err">${esc(S.err)}</span>`:''}</div>
-    <div class="card"><div class="row"><span>Loc păstrat</span><b>20 min</b></div><div class="row"><span>Tarif</span><b>${S.abon?'Gratuit (abonament)':'8 lei · bilet P+R'}</b></div></div>
-    <button class="btn" data-a="rezerva">Confirmă rezervarea</button>`;
-  return `<div class="gate"><span class="small" style="color:inherit;opacity:.85">Rezervare ${esc(S.rez.id)}</span><h2>Loc păstrat la P+R ${esc(S.rec.gate.nume)}</h2><span class="plate">${esc(S.rez.plate)}</span></div>
+  if (S.rez) return vRezConfirmata();
+  const cs = S.cardStare, pret = pretClient(S.ore), card = areCard();
+  const stareCard = cs ? `<span class="small" style="color:${cs.valid?'var(--free)':'var(--full)'}">${cs.valid?'✓ ':'✗ '}${esc(cs.mesaj)}</span>` : '';
+  return `<div class="card"><label for="plate">Numărul mașinii</label>
+      <input id="plate" class="plate" value="${esc(S.plate)}" autocomplete="off" autocapitalize="characters"></div>
+    <div class="card"><label for="card">Card CTP (demo)</label>
+      <div class="row"><input id="card" class="plate" value="${esc(S.cardCtp)}" placeholder="ex. CTP1001" autocomplete="off" style="text-transform:none">
+        <button class="btn alt" data-a="verifCard" style="width:auto;padding:12px 16px">Verifică</button></div>
+      ${stareCard}
+      <span class="small">Carduri de test: CTP1001 · 1234 1234 1234 1234. Fără card, tariful e ${TARIF.faraCardOra} lei/oră.</span></div>
+    <div class="card"><label>Cât timp stai?</label>
+      <div class="chips">${DURATE.map(([n,h])=>`<button class="chip" data-ore="${h}" aria-pressed="${S.ore===h}">${n}</button>`).join('')}</div></div>
+    <div class="card"><div class="row"><span>Loc păstrat</span><b>20 min</b></div>
+      <div class="row"><span>Tarif</span><b>${card?`${TARIF.oreGratis} h gratis + ${TARIF.cuCardOra} lei/h`:`${TARIF.faraCardOra} lei/oră`}</b></div>
+      <div class="row" style="font-size:1.15rem"><b>De plată</b><b>${pret===0?'Gratuit':lei(pret)}</b></div>
+      <span class="small">${card?`Card CTP valid: primele ${TARIF.oreGratis} ore sunt gratuite.`:'Cu un card CTP valid ai primele 2 ore gratuite.'}</span></div>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" data-a="rezerva">${pret===0?'Rezervă gratuit':`Continuă spre plată · ${lei(pret)}`}</button>`;
+}
+function vRezConfirmata(){
+  const r = S.rez;
+  return `<div class="gate"><span class="small" style="color:inherit;opacity:.85">Rezervare ${esc(r.id)}</span>
+      <h2>Loc păstrat la P+R ${esc(S.rec.gate.nume)}</h2><span class="plate">${esc(r.plate)}</span></div>
+    <div class="card"><div class="row"><span>Durată estimată</span><b>${(''+r.ore).replace('.',',')} h</b></div>
+      <div class="row"><span>Cost ședere</span><b>${r.cost>0?lei(r.cost):'Gratuit'}</b></div>
+      <div class="row"><span>Stare plată</span><b style="color:var(--free)">${r.cost>0?'✓ Plătit':'Gratuit (card CTP)'}</b></div>
+      ${r.tranzactie?`<span class="small">Tranzacție ${esc(r.tranzactie)} · demo, fără plată reală</span>`:''}</div>
     <div class="card"><span class="small" style="text-align:center">Locul tău e păstrat încă</span><div class="cd" id="cd">20:00</div></div>
     ${S.prog?`<div class="ai"><b>AI</b><span>${esc(S.prog)}</span></div>`:''}
     <button class="btn amb" data-a="ajuns">Am ajuns la barieră</button>`;
+}
+function vPlata(){
+  const r = S.rez;
+  return `<div class="gate"><span class="small" style="color:inherit;opacity:.85">De plată pentru P+R ${esc(S.rec.gate.nume)}</span>
+      <div class="row"><h2>${lei(r.cost)}</h2></div>
+      <span class="small" style="color:inherit;opacity:.85">${esc(r.explicatie_tarif||'')}</span></div>
+    <div class="card"><label for="pnume">Nume pe card</label><input id="pnume" value="Andrei Popescu">
+      <label for="pcard">Număr card</label><input id="pcard" class="plate" value="4111 1111 1111 1111" inputmode="numeric">
+      <div class="row"><div style="flex:1"><label for="pexp">Expiră</label><input id="pexp" value="12/28"></div>
+        <div style="flex:1"><label for="pcvv">CVV</label><input id="pcvv" value="123" inputmode="numeric"></div></div></div>
+    <div class="ai"><b>DEMO</b><span>Plată simulată. Nu se procesează niciun card real și nu se încasează bani.</span></div>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" data-a="plateste">Plătește ${lei(r.cost)}</button>
+    <button class="btn alt" data-a="anuleazaPlata">Înapoi</button>`;
 }
 function vBariera(){
   const e = S.intrare;
   return `<div class="card">
     <div class="chk" id="c1"><i>✓</i><span>Număr recunoscut: <b class="plate">${esc(e.numar)}</b></span></div>
-    <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Abonament CTP valid':'Bilet P+R plătit'}</span></div>
+    <div class="chk" id="c2"><i>✓</i><span>${e.abonament?'Card CTP valid':(e.platit?'Plată confirmată la rezervare':'Fără card · plată la ieșire')}</span></div>
     <div class="chk" id="c3"><i>✓</i><span>${e.permis===false?esc(e.mesaj):'Bariera se ridică'}</span></div>
     ${e.sector?`<div class="chk" id="c4"><i>✓</i><span>Loc: sector ${esc(e.sector)}, locul ${e.loc}</span></div>`:''}</div>
     <button class="btn" data-a="gata" id="gata" disabled>Spre stația CTP</button>`;
@@ -167,14 +209,14 @@ function vEu(){
 }
 
 async function deseneaza(){
-  const el = $('#ecran'), titluri = { form:'Porțile Iașului', rec:'Recomandarea ta', rez:'Rezervare', bariera:'La barieră', gata:'Drum bun!' };
+  const el = $('#ecran'), titluri = { form:'Porțile Iașului', rec:'Recomandarea ta', rez:'Rezervare', plata:'Plată', bariera:'La barieră', gata:'Drum bun!' };
   $('#inapoi').hidden = !(S.tab === 'drum' && (S.pas === 'rec' || (S.pas === 'rez' && !S.rez)));
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === S.tab));
   if (S.tab === 'porti'){ $('#titlu').textContent = 'Porțile acum'; el.innerHTML = '<p class="status">Se încarcă…</p>';
     try { el.innerHTML = await vPorti(); } catch(e){ el.innerHTML = `<p class="err">${esc(e.message)}</p>`; } return; }
   if (S.tab === 'eu'){ $('#titlu').textContent = 'Contul meu'; el.innerHTML = vEu(); return; }
   $('#titlu').textContent = titluri[S.pas];
-  el.innerHTML = ({ form:vForm, rec:vRec, rez:vRez, bariera:vBariera, gata:vGata })[S.pas]();
+  el.innerHTML = ({ form:vForm, rec:vRec, rez:vRez, plata:vPlata, bariera:vBariera, gata:vGata })[S.pas]();
   window.scrollTo(0, 0);
 }
 
@@ -184,10 +226,25 @@ document.addEventListener('change', e => {
   if (e.target.id === 'dst') mem('di', S.di = +e.target.value);
   if (e.target.id === 'plate2') mem('plate', S.plate = e.target.value.toUpperCase());
 });
+document.addEventListener('input', e => {
+  if (e.target.id === 'card'){ mem('cardCtp', S.cardCtp = e.target.value); S.cardStare = null; }
+});
+async function verificaCard(silentios){
+  if (!S.cardCtp || !S.cardCtp.trim()){ S.cardStare = null; S.abon = false; return; }
+  try { const r = await api('/api/ctp/verifica', { card: S.cardCtp }); S.cardStare = r; S.abon = r.valid; mem('abon', S.abon); }
+  catch(e){ if (!silentios) S.err = e.message; }
+}
+async function confirmaRezervare(){   // ia predicția și arată rezervarea confirmată
+  let prog = '';
+  try { const f = await api(`/api/gates/${S.rec.gate.id}/forecast?` + tParam());
+    prog = f.se_umple_la_text ? `Predicție: P+R ${S.rec.gate.nume} se umple în jurul orei ${f.se_umple_la_text}. Locul tău rămâne păstrat.` : `Predicție: P+R ${S.rec.gate.nume} nu se umple în următoarele ore.`; } catch(_){}
+  seteaza({ prog, pas:'rez', rezEnd: Date.now() + 20*60000, err:'' });
+}
 document.addEventListener('click', async e => {
   const nav = e.target.closest('nav button'); if (nav) return seteaza({ tab: nav.dataset.tab });
   if (e.target.id === 'inapoi') return seteaza({ pas: S.pas === 'rez' ? 'rec' : 'form', err:'' });
   const ch = e.target.closest('[data-ora]'); if (ch){ const v = ch.dataset.ora === 'null' ? null : +ch.dataset.ora; mem('ora', v); return seteaza({ ora: v }); }
+  const co = e.target.closest('[data-ore]'); if (co){ mem('ore', S.ore = +co.dataset.ore); return seteaza({ err:'' }); }
   const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
   const a = b.dataset.a;
   try {
@@ -196,13 +253,19 @@ document.addEventListener('click', async e => {
     if (a === 'cauta'){ b.disabled = true; b.textContent = 'Caut…';
       const rec = await api('/api/recommend', { origine:S.oi, destinatie:S.di, abonament:S.abon, ...(S.ora!=null && { t:S.ora }) });
       seteaza({ rec, pas:'rec', err:'' }); }
-    if (a === 'laRez') seteaza({ pas:'rez', rez:null, err:'' });
+    if (a === 'laRez'){ S.rez = null; S.err = ''; S.pas = 'rez'; await verificaCard(true); deseneaza(); }
+    if (a === 'verifCard'){ S.cardCtp = $('#card').value; mem('cardCtp', S.cardCtp); b.disabled = true; b.textContent = '…'; await verificaCard(false); deseneaza(); }
     if (a === 'rezerva'){ const numar = $('#plate').value.toUpperCase().trim(); mem('plate', S.plate = numar);
-      const rez = await api('/api/reservations', { poarta:S.rec.gate.id, numar, abonament:S.abon, ...(S.ora!=null && { t:S.ora }) });
-      let prog = '';
-      try { const f = await api(`/api/gates/${S.rec.gate.id}/forecast?` + tParam());
-        prog = f.se_umple_la_text ? `Predicție: P+R ${S.rec.gate.nume} se umple în jurul orei ${f.se_umple_la_text}. Locul tău rămâne păstrat.` : `Predicție: P+R ${S.rec.gate.nume} nu se umple în următoarele ore.`; } catch(_){}
-      seteaza({ rez, prog, rezEnd: Date.now() + 20*60000, err:'' }); }
+      b.disabled = true;
+      const rez = await api('/api/reservations', { poarta:S.rec.gate.id, numar, ore:S.ore,
+        ...(areCard() ? { card_ctp:S.cardCtp } : { abonament:false }), ...(S.ora!=null && { t:S.ora }) });
+      S.rez = rez;
+      if (rez.necesita_plata){ seteaza({ pas:'plata', err:'' }); }
+      else { await confirmaRezervare(); } }
+    if (a === 'plateste'){ b.disabled = true; b.textContent = 'Se procesează…';
+      const p = await api('/api/plata', { rezervare:S.rez.id, nume:$('#pnume').value, numar_card:$('#pcard').value });
+      S.rez = p; await confirmaRezervare(); }
+    if (a === 'anuleazaPlata'){ seteaza({ pas:'rez', rez:null, err:'' }); }
     if (a === 'ajuns'){ const ora = S.ora == null ? null : S.ora + S.rec.legs.toGate;
       const intrare = await api('/api/gate-events', { numar:S.rez.plate, poarta:S.rec.gate.id, tip:'intrare', ...(ora!=null && { t:ora }) });
       seteaza({ intrare, pas:'bariera' });

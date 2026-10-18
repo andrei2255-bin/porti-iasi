@@ -50,9 +50,11 @@ def test_fara_redirectionare_la_pranz(client):
 
 
 def test_flux_complet_rezervare_bariera_iesire(client):
+    # card CTP valid + 2 ore => gratuit, fără plată
     rez = client.post("/api/reservations",
-                      json={"poarta": "cug", "numar": "is 23 okc", "t": 515, "abonament": True}).json()
+                      json={"poarta": "cug", "numar": "is 23 okc", "t": 515, "card_ctp": "CTP1001", "ore": 2}).json()
     assert rez["plate"] == "IS 23 OKC" and rez["minute"] == 20 and rez["id"].startswith("R")
+    assert rez["cost"] == 0 and rez["platit"] is True and rez["necesita_plata"] is False
     # camera citește greșit 0 în loc de O: backendul corectează
     e = client.post("/api/gate-events", json={"numar": "IS23 0KC", "t": 530}).json()
     assert e["recunoscut"] and e["permis"] and e["abonament"] is True and e["tarif"] == 0
@@ -64,12 +66,15 @@ def test_flux_complet_rezervare_bariera_iesire(client):
     assert x["durata_min"] == 520 and x["permis"]
 
 
-def test_fara_abonament_plateste_bilet(client):
+def test_fara_card_plateste_pe_ora(client):
+    # fără card, 8 ore => 8 × 5 = 40 lei, trebuie plătit
     rez = client.post("/api/reservations",
-                      json={"poarta": "dancu", "numar": "CJ 99 XYZ", "t": 600, "abonament": False}).json()
-    assert rez["tarif"] == 8
+                      json={"poarta": "dancu", "numar": "CJ 99 XYZ", "t": 600, "abonament": False, "ore": 8}).json()
+    assert rez["cost"] == 40 and rez["tarif"] == 40 and rez["necesita_plata"] is True and rez["platit"] is False
+    plata = client.post("/api/plata", json={"rezervare": rez["id"], "numar_card": "4111 1111 1111 1111"}).json()
+    assert plata["platit"] is True and plata["tranzactie"].startswith("TX-") and "40" in plata["mesaj"]
     e = client.post("/api/gate-events", json={"numar": "CJ 99 XYZ", "t": 610}).json()
-    assert e["abonament"] is False and e["tarif"] == 8
+    assert e["abonament"] is False and e["platit"] is True and "Plătit" in e["mesaj"]
 
 
 def test_rezervarea_ocupa_un_loc(client):

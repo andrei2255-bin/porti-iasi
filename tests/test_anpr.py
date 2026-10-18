@@ -16,7 +16,8 @@ def test_citeste_numarul_din_poza(text, rotatie):
 
 @necesita_motor
 def test_bariera_cu_poza(client):
-    client.post("/api/reservations", json={"poarta": "dancu", "numar": "IS 77 PRR", "t": 700, "abonament": True})
+    client.post("/api/reservations",
+                json={"poarta": "dancu", "numar": "IS 77 PRR", "t": 700, "card_ctp": "CTP1001", "ore": 2})
     r = client.post("/api/gate-events/foto", data={"t": "710"},
                     files={"foto": ("masina.jpg", poza_cu_placuta("IS 77 PRR", -2.0, seed=7), "image/jpeg")})
     assert r.status_code == 200, r.text

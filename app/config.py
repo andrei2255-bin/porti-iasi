@@ -24,8 +24,25 @@ ZI_START, ZI_FINAL, PAS = 300, 1380, 5
 
 PRAG_PLIN = 0.93        # peste 93% ocupare, o poartă e considerată plină
 REZERVARE_MIN = 20      # cât timp e păstrat un loc rezervat
-TARIF_PR = 8            # lei: bilet P+R pentru cine nu are abonament CTP (parcare + 2 călătorii)
 ZILE_ISTORIC = int(os.getenv("PORTI_ZILE_ISTORIC", "120"))   # câte zile de istoric generează simulatorul
+
+# Tarifarea parcării P+R (demo; de validat cu Primăria și CTP)
+TARIF_FARA_CARD_ORA = 5     # lei/oră, fără card CTP
+CARD_ORE_GRATIS = 2         # ore gratuite cu card CTP valid
+CARD_TARIF_ORA = 3          # lei/oră cu card CTP, după orele gratuite
+ORE_IMPLICIT = 8            # durata presupusă dacă șoferul nu alege altceva (o zi de lucru)
+# Cost reprezentativ P+R pentru comparația „prin poartă vs. cu mașina” din recomandare (un drum).
+# Tariful real pe ore (de mai sus) se aplică la rezervare și plată.
+TARIF_PR = 8
+
+# Carduri CTP de test pentru verificarea din aplicație (demo). În realitate, verificarea se face
+# în sistemul de ticketing CTP. Numerele se normalizează (fără spații/liniuțe, majuscule).
+CARDURI_CTP_DEMO = {
+    "1234123412341234": "Andrei Popescu",
+    "CTP1001": "Maria Ionescu",
+    "CTP2002": "Vlad Marinescu",
+    "5500000011112222": "Elena Dobre",
+}
 
 # Ipoteze de calcul (aceleași ca în frontend; trebuie validate cu Primăria și CTP)
 LEI_PE_KM = 0.65

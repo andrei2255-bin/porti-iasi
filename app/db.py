@@ -31,9 +31,18 @@ CREATE TABLE IF NOT EXISTS rezervari (
     expira_t     INTEGER NOT NULL,
     bilet_platit INTEGER NOT NULL DEFAULT 0,
     stare        TEXT NOT NULL DEFAULT 'activa',      -- activa | folosita | anulata
+    ore          REAL NOT NULL DEFAULT 0,             -- durata estimată de ședere
+    cost         REAL NOT NULL DEFAULT 0,             -- lei de plătit pentru ședere
+    card         TEXT,                                -- cardul CTP folosit la rezervare (demo)
+    platit       INTEGER NOT NULL DEFAULT 0,          -- 0 = neplătit, 1 = plătit
+    tranzactie   TEXT,                                -- codul plății (demo)
     creat_la     TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_rezervari ON rezervari(zi, numar);
+CREATE TABLE IF NOT EXISTS carduri_ctp (
+    card   TEXT PRIMARY KEY,                          -- numărul cardului, normalizat
+    nume   TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS evenimente_bariera (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     poarta    TEXT NOT NULL,
@@ -85,12 +94,33 @@ def conexiune():
         con.close()
 
 
+# Coloane adăugate după prima versiune: le punem și în bazele de date deja existente,
+# ca aplicația să meargă și pe un deploy mai vechi, fără să ștergem datele.
+_COLOANE_NOI = [
+    ("rezervari", "ore", "REAL NOT NULL DEFAULT 0"),
+    ("rezervari", "cost", "REAL NOT NULL DEFAULT 0"),
+    ("rezervari", "card", "TEXT"),
+    ("rezervari", "platit", "INTEGER NOT NULL DEFAULT 0"),
+    ("rezervari", "tranzactie", "TEXT"),
+]
+
+
+def _migreaza(con: sqlite3.Connection) -> None:
+    for tabel, coloana, tip in _COLOANE_NOI:
+        existente = {r["name"] for r in con.execute(f"PRAGMA table_info({tabel})")}
+        if coloana not in existente:
+            con.execute(f"ALTER TABLE {tabel} ADD COLUMN {coloana} {tip}")
+
+
 def initializeaza() -> None:
     with conexiune() as con:
         con.execute("PRAGMA journal_mode=WAL")
         con.executescript(SCHEMA)
+        _migreaza(con)
         for i, numar in enumerate(config.ABONAMENTE_DEMO, start=1):
             con.execute(
                 "INSERT OR IGNORE INTO abonamente_ctp(numar, card, valabil_pana, sursa) VALUES (?,?,?,?)",
                 (numar, f"CTP-DEMO-{i:04d}", "2027-12-31", "demo"),
             )
+        for card, nume in config.CARDURI_CTP_DEMO.items():
+            con.execute("INSERT OR IGNORE INTO carduri_ctp(card, nume) VALUES (?,?)", (card, nume))

@@ -161,6 +161,28 @@ Unde se folosește predicția:
 
 ---
 
+## Card CTP și plată (demo)
+
+Aplicația de mobil (`/app`) are, la rezervare, verificarea cardului CTP și plata — ambele **simulate**:
+nu se verifică un card real și nu se încasează bani.
+
+**Tarifare parcare P+R:**
+- fără card CTP: **5 lei/oră**
+- cu card CTP valid: **primele 2 ore gratuite**, apoi **3 lei/oră**
+
+**Fluxul la rezervare:** șoferul introduce numărul mașinii, verifică (opțional) cardul CTP, alege durata
+estimată (2 h / 4 h / 8 h / toată ziua), vede costul, apoi — dacă e de plată — trece printr-un ecran de
+plată fals (card bancar demo). Cu card CTP și ședere scurtă, rezervarea e gratuită și se sare peste plată.
+
+**Carduri CTP de test** (în `app/config.py`, `CARDURI_CTP_DEMO`): `CTP1001`, `CTP2002`, `1234 1234 1234 1234`,
+`5500 0000 1111 2222`. Orice alt card e „negăsit”, iar tariful devine 5 lei/oră.
+
+**Endpoint-uri:** `POST /api/ctp/verifica` (verifică un card), `POST /api/reservations` (acceptă acum `card_ctp`
+și `ore`, întoarce `cost` și `necesita_plata`), `POST /api/plata` (plată simulată, întoarce o chitanță).
+Valorile se schimbă în `app/config.py` (`TARIF_FARA_CARD_ORA`, `CARD_ORE_GRATIS`, `CARD_TARIF_ORA`).
+
+---
+
 ## Recunoașterea numerelor (opțional)
 
 ```bash

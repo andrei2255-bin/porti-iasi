@@ -25,9 +25,11 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from . import anpr, db, istoric, predictie
-from .config import (CAPACITATE_TOTALA, CO2_KG_PE_KM, DESTINATII, DIR_STATIC, KM_EVITATI_PE_MASINA, ORIGINI, PAS,
-                     PERSOANE_PE_MASINA, PORTI, PORTI_DUPA_ID, PRAG_PLIN, REZERVARE_MIN, TARIF_PR, VECINI, ZI_START)
+from .config import (CAPACITATE_TOTALA, CARD_ORE_GRATIS, CARD_TARIF_ORA, CO2_KG_PE_KM, DESTINATII, DIR_STATIC,
+                     KM_EVITATI_PE_MASINA, ORE_IMPLICIT, ORIGINI, PAS, PERSOANE_PE_MASINA, PORTI, PORTI_DUPA_ID,
+                     PRAG_PLIN, REZERVARE_MIN, TARIF_FARA_CARD_ORA, VECINI, ZI_START)
 from .logica import recomanda
+from .plata import cod_tranzactie, cost_sedere, explica_tarif, normalizeaza_card, verifica_card
 from .numere import corecteaza_ocr, normalizeaza
 from .ocupare import (context_cu_scenariu, cronologie, poarta_api, rezultat_zi, scenariu_curent, sector_si_loc,
                       seteaza_scenariu, stare_porti)
@@ -71,12 +73,24 @@ class CerereRecomandare(BaseModel):
     zi: Optional[date] = Field(None, description=_DESC_ZI)
 
 
+class CerereCard(BaseModel):
+    card: str = Field(..., description="Numărul cardului CTP (demo). Carduri de test: CTP1001, 1234 1234 1234 1234")
+
+
 class CerereRezervare(BaseModel):
     poarta: str = Field(..., description="Id-ul porții: " + ", ".join(p["id"] for p in PORTI))
     numar: str = Field(..., description="Numărul mașinii, ex. IS 23 OKC sau B 123 ABC")
     t: Optional[int] = Field(None, ge=0, le=1439, description=_DESC_T)
-    abonament: bool = Field(True, description="Șoferul are abonament CTP (altfel cumpără bilet P+R de 8 lei)")
+    abonament: bool = Field(True, description="Șoferul are card/abonament CTP (dacă nu dă card_ctp)")
+    card_ctp: Optional[str] = Field(None, description="Numărul cardului CTP (demo). Dacă e valid, 2 ore gratuite.")
+    ore: float = Field(float(ORE_IMPLICIT), ge=0.5, le=24, description="Durata estimată de ședere, în ore")
     zi: Optional[date] = Field(None, description=_DESC_ZI)
+
+
+class CererePlata(BaseModel):
+    rezervare: str = Field(..., description="Id-ul rezervării de plătit")
+    nume: Optional[str] = Field(None, description="Numele de pe card (demo)")
+    numar_card: Optional[str] = Field(None, description="Numărul cardului bancar (demo; nu se procesează real)")
 
 
 class EvenimentBariera(BaseModel):
@@ -162,15 +176,44 @@ async def recommend(request: Request, corp: CerereRecomandare):
     return rec
 
 
-@api.ruta("POST", "/api/reservations", corp=CerereRezervare, tag="Șofer", rezumat="Rezervă un loc pentru 20 de minute")
+@api.ruta("POST", "/api/ctp/verifica", corp=CerereCard, tag="Șofer", rezumat="Verifică un card CTP (demo)")
+async def ctp_verifica(request: Request, corp: CerereCard):
+    """Verifică dacă numărul de card CTP e valid. Demo: compară cu o listă de carduri de test."""
+    with db.conexiune() as con:
+        rez = verifica_card(con, corp.card)
+    rez["tarif"] = {"fara_card_ora": TARIF_FARA_CARD_ORA, "ore_gratis": CARD_ORE_GRATIS, "cu_card_ora": CARD_TARIF_ORA}
+    return rez
+
+
+def _rezervare_json(r, g_nume: Optional[str] = None) -> dict:
+    return {"id": r["id"], "gid": r["poarta"], "poarta": g_nume or PORTI_DUPA_ID[r["poarta"]]["nume"],
+            "plate": r["numar"], "numar": r["numar"], "minute": REZERVARE_MIN, "expira_la": ora(r["expira_t"]),
+            "ore": r["ore"], "cost": r["cost"], "card": r["card"], "platit": bool(r["platit"]),
+            "tranzactie": r["tranzactie"], "stare": r["stare"],
+            "explicatie_tarif": explica_tarif(r["ore"], bool(r["card"])),
+            "necesita_plata": r["cost"] > 0 and not r["platit"]}
+
+
+@api.ruta("POST", "/api/reservations", corp=CerereRezervare, tag="Șofer", rezumat="Rezervă un loc și calculează costul")
 async def reservations(request: Request, corp: CerereRezervare):
-    """Păstrează un loc la poartă pentru numărul de mașină dat. O mașină are o singură rezervare activă."""
+    """Păstrează un loc la poartă, verifică cardul CTP și calculează costul șederii.
+    Dacă rezultă un cost, se plătește cu POST /api/plata. O mașină are o singură rezervare activă."""
     g = _poarta_sau_eroare(corp.poarta)
     numar = normalizeaza(corp.numar)
     if not numar:
         raise EroareAPI(422, "Scrie numărul ca pe plăcuță, de exemplu IS 23 OKC sau B 123 ABC.")
     zi, t = _zi_t(corp.zi, corp.t)
     with db.conexiune() as con:
+        # cardul CTP: fie e dat explicit și verificat, fie semnalul vechi „abonament”
+        card = None
+        if corp.card_ctp:
+            v = verifica_card(con, corp.card_ctp)
+            card = v["card"] if v["valid"] else None
+        elif corp.abonament:
+            card = normalizeaza_card(numar)   # compatibilitate cu site-ul vechi (trimite doar abonament=true)
+        are_card = card is not None
+        cost = cost_sedere(corp.ore, are_card)
+
         con.execute("UPDATE rezervari SET stare='anulata' WHERE zi=? AND numar=? AND stare='activa'",
                     (zi.isoformat(), numar))
         stare = stare_porti(con, zi, t)
@@ -178,23 +221,47 @@ async def reservations(request: Request, corp: CerereRezervare):
             alt = PORTI_DUPA_ID[VECINI[g["id"]]]
             raise EroareAPI(409, f"P+R {g['nume']} e plină. Încearcă P+R {alt['nume']} "
                                  f"({stare[alt['id']]['libere']} locuri libere).", alternativa=alt["id"])
-        if corp.abonament:
-            # Demo: aplicația leagă numărul de cardul CTP al utilizatorului.
-            # În realitate, legătura vine din contul CTP, nu din ce declară aplicația.
+        if are_card:
+            # Demo: legăm numărul de un abonament CTP valid, ca bariera să-l recunoască.
             con.execute(
                 "INSERT INTO abonamente_ctp(numar, card, valabil_pana, sursa) VALUES (?,?,?,'aplicatie') "
                 "ON CONFLICT(numar) DO UPDATE SET valabil_pana=MAX(valabil_pana, excluded.valabil_pana)",
-                (numar, "CTP-APP-" + uuid.uuid4().hex[:6].upper(), (zi + timedelta(days=30)).isoformat()),
+                (numar, card, (zi + timedelta(days=30)).isoformat()),
             )
         rid = "R" + uuid.uuid4().hex[:7].upper()
+        platit = 1 if cost == 0 else 0     # gratuit = nimic de plătit
         con.execute(
-            "INSERT INTO rezervari(id, poarta, numar, zi, t, expira_t, bilet_platit, stare, creat_la) "
-            "VALUES (?,?,?,?,?,?,?,'activa',?)",
-            (rid, g["id"], numar, zi.isoformat(), t, t + REZERVARE_MIN, 0 if corp.abonament else 1, db.acum_iso()),
+            "INSERT INTO rezervari(id, poarta, numar, zi, t, expira_t, bilet_platit, stare, ore, cost, card, "
+            "platit, tranzactie, creat_la) VALUES (?,?,?,?,?,?,?,'activa',?,?,?,?,?,?)",
+            (rid, g["id"], numar, zi.isoformat(), t, t + REZERVARE_MIN, 0 if are_card else 1,
+             corp.ore, cost, card, platit, None, db.acum_iso()),
         )
-    return {"id": rid, "gid": g["id"], "plate": numar, "minute": REZERVARE_MIN,
-            "poarta": g["nume"], "numar": numar, "expira_la": ora(t + REZERVARE_MIN),
-            "tarif": 0 if corp.abonament else TARIF_PR}
+        r = con.execute("SELECT * FROM rezervari WHERE id=?", (rid,)).fetchone()
+    rez = _rezervare_json(r, g["nume"])
+    rez["tarif"] = cost          # compatibilitate cu site-ul vechi (câmpul „tarif”)
+    rez["are_card"] = are_card
+    return rez
+
+
+@api.ruta("POST", "/api/plata", corp=CererePlata, tag="Șofer", rezumat="Plătește o rezervare (demo)")
+async def plata(request: Request, corp: CererePlata):
+    """Plată SIMULATĂ: nu se procesează niciun card bancar real. Marchează rezervarea ca plătită."""
+    with db.conexiune() as con:
+        r = con.execute("SELECT * FROM rezervari WHERE id=?", (corp.rezervare,)).fetchone()
+        if not r:
+            raise EroareAPI(404, "Rezervarea nu există.")
+        if r["stare"] == "anulata":
+            raise EroareAPI(409, "Rezervarea a fost anulată.")
+        if r["platit"]:
+            return {**_rezervare_json(r), "mesaj": "Rezervarea e deja plătită."}
+        if r["cost"] <= 0:
+            con.execute("UPDATE rezervari SET platit=1 WHERE id=?", (r["id"],))
+        else:
+            tx = cod_tranzactie()
+            con.execute("UPDATE rezervari SET platit=1, tranzactie=? WHERE id=?", (tx, r["id"]))
+        r = con.execute("SELECT * FROM rezervari WHERE id=?", (r["id"],)).fetchone()
+    lei = f"{r['cost']:g}".replace(".", ",")
+    return {**_rezervare_json(r), "mesaj": f"Plată reușită: {lei} lei. (demo — fără tranzacție reală)"}
 
 
 @api.ruta("GET", "/api/reservations/{id}", tag="Șofer", rezumat="Starea unei rezervări")
@@ -203,7 +270,7 @@ async def reservation_status(request: Request):
         r = con.execute("SELECT * FROM rezervari WHERE id=?", (request.path_params["id"],)).fetchone()
     if not r:
         raise EroareAPI(404, "Rezervarea nu există.")
-    return {**dict(r), "expira_la": ora(r["expira_t"])}
+    return _rezervare_json(r)
 
 
 @api.ruta("POST", "/api/gate-events", corp=EvenimentBariera, tag="Barieră", rezumat="Camera de la barieră a citit un număr")
@@ -252,13 +319,28 @@ def _eveniment_bariera(con, zi: date, t: int, numar: str, poarta: Optional[str],
 
     ab = con.execute("SELECT valabil_pana FROM abonamente_ctp WHERE numar=?", (numar,)).fetchone()
     abonament = ab is not None and ab["valabil_pana"] >= zi.isoformat()
-    tarif = 0 if abonament else TARIF_PR
 
     stare = stare_porti(con, zi, t)[gid]
     if not are_rezervare and stare["libere"] <= 0:
         alt = PORTI_DUPA_ID[VECINI[gid]]
         return {"recunoscut": True, "permis": False, "numar": numar, "poarta": gid, "abonament": abonament,
-                "tarif": tarif, "mesaj": f"Parcare plină. Mergeți la P+R {alt['nume']}."}
+                "tarif": 0, "mesaj": f"Parcare plină. Mergeți la P+R {alt['nume']}."}
+
+    # Mesajul de la barieră reflectă plata făcută la rezervare (noul model: plata e în aplicație).
+    if are_rezervare and rez["platit"]:
+        lei = f"{rez['cost']:g}".replace(".", ",")
+        tarif = int(round(rez["cost"]))
+        mesaj = "Card CTP valid. Parcare gratuită (2 ore incluse)." if rez["cost"] == 0 \
+            else f"Plătit la rezervare: {lei} lei. Bariera se ridică."
+    elif are_rezervare:
+        tarif = int(round(rez["cost"]))
+        mesaj = "Rezervare găsită, dar neplătită. Finalizează plata în aplicație."
+    elif abonament:
+        tarif = 0
+        mesaj = f"Card CTP valid. Primele {CARD_ORE_GRATIS} ore gratuite, apoi {CARD_TARIF_ORA} lei/oră."
+    else:
+        tarif = 0
+        mesaj = f"Fără card CTP: {TARIF_FARA_CARD_ORA} lei/oră, se plătește la ieșire."
 
     sector, loc = sector_si_loc(min(g["loc"], stare["masini"] + (0 if are_rezervare else 1)))
     con.execute(
@@ -270,8 +352,7 @@ def _eveniment_bariera(con, zi: date, t: int, numar: str, poarta: Optional[str],
     return {"recunoscut": True, "permis": True, "numar": numar, "poarta": gid, "abonament": abonament,
             "tarif": tarif, "sector": sector, "loc": loc,
             "rezervare": rez["id"] if are_rezervare else None,
-            "mesaj": "Abonament CTP valid. Parcare gratuită." if abonament
-                     else f"Fără abonament: bilet P+R {TARIF_PR} lei (include 2 călătorii)."}
+            "platit": bool(rez["platit"]) if are_rezervare else False, "mesaj": mesaj}
 
 
 # ======================================================================
