@@ -24,7 +24,9 @@ body{min-height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-a
 header{display:flex;align-items:center;gap:10px;padding:12px 16px}
 .ps{width:32px;height:32px;border-radius:7px;background:var(--sign);color:var(--sign-ink);display:grid;place-items:center;font-weight:900;font-size:1.1rem;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 3.5px var(--sign-ink)}
 header b{font-size:1.1rem;font-weight:800}
-header button{margin-left:auto;background:none;border:0;color:var(--sign);font:inherit;font-weight:700;padding:6px}
+header .clock{margin-left:auto;font-weight:700;color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums}
+header button{background:none;border:0;color:var(--sign);font:inherit;font-weight:700;padding:6px;margin-left:12px}
+header .clock+button{margin-left:12px}
 main{flex:1;padding:4px 16px 110px;display:flex;flex-direction:column;gap:12px;max-width:560px;width:100%;margin:0 auto}
 .card{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
 label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
@@ -68,7 +70,7 @@ nav svg{display:block;margin:0 auto 3px;width:22px;height:22px}
 </style>
 </head>
 <body>
-<header><span class="ps">P</span><b id="titlu">Porțile Iașului</b><button id="inapoi" hidden>Înapoi</button></header>
+<header><span class="ps">P</span><b id="titlu">Porțile Iașului</b><span id="clock" class="clock" aria-live="polite"></span><button id="inapoi" hidden>Înapoi</button></header>
 <main id="ecran"></main>
 <nav>
   <button data-tab="drum" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 22l8-5 8 5z"/></svg>Drum</button>
@@ -80,13 +82,14 @@ nav svg{display:block;margin:0 auto 3px;width:22px;height:22px}
 const API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
 const ORIGINI = ['Lețcani / Podu Iloaiei','Târgu Frumos','Miroslava','Ciurea / Lunca Cetățuii','Bârnova / Vaslui','Holboca / Tomești','Rediu / Botoșani'];
 const DEST = ['Piața Unirii','Palas','UAIC (Copou)','Spitalul Sf. Spiridon','Gara','Tătărași'];
-const ORE = [['acum',null],['07:30',450],['08:30',510],['13:00',780],['17:30',1050]];
 const mem = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('pi_' + k)); localStorage.setItem('pi_' + k, JSON.stringify(v)); } catch(e){ return null; } };
+// Ora: implicit folosim ora reală (live). Pentru un demo controlat se poate fixa cu ?t=510 în adresă.
+const pinT = () => { const v = new URLSearchParams(location.search).get('t'); return v != null && v !== '' ? Math.max(300, Math.min(1380, +v)) : null; };
 const TARIF = { faraCardOra: 5, oreGratis: 2, cuCardOra: 3 };   // demo; identic cu serverul
 const ORE_MIN = 1, ORE_MAX = 12, ORE_PAS = 1;                   // identic cu config.py
 const clampOre = h => Math.min(ORE_MAX, Math.max(ORE_MIN, Math.round(h / ORE_PAS) * ORE_PAS));
 const S = { tab:'drum', pas:'form', oi: mem('oi') ?? 0, di: mem('di') ?? 0, abon: mem('abon') ?? true, plate: mem('plate') || 'IS 23 OKC',
-            ora: mem('ora') ?? 510, ore: clampOre(mem('ore') ?? 8), cardCtp: mem('cardCtp') ?? 'CTP1001', cardStare: null,
+            ora: pinT(), ore: clampOre(mem('ore') ?? 8), cardCtp: mem('cardCtp') ?? 'CTP1001', cardStare: null,
             rec:null, rez:null, rezEnd:0, intrare:null, err:'', istoric: mem('istoric') || [] };
 const areCard = () => !!(S.cardStare && S.cardStare.valid);
 const pretClient = ore => areCard() ? Math.max(0, ore - TARIF.oreGratis) * TARIF.cuCardOra : ore * TARIF.faraCardOra;
@@ -96,6 +99,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const fmt = m => String(Math.floor(m/60)%24).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
 const culoare = o => o >= .93 ? 'var(--full)' : o >= .75 ? 'var(--mid)' : 'var(--free)';
 const tParam = () => S.ora == null ? '' : `t=${S.ora}`;
+const oraLive = () => { const d = new Date(); return Math.max(300, Math.min(1380, d.getHours()*60 + d.getMinutes())); };
+const oraAfisata = () => S.ora == null ? oraLive() : S.ora;   // live, sau ora fixată pentru demo
 
 async function api(cale, corp){
   const r = await fetch(API_BASE + cale, corp ? { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corp) } : {});
@@ -111,7 +116,7 @@ function vForm(){
     <label for="ori">Vin dinspre</label><select id="ori">${ORIGINI.map((o,i)=>`<option value="${i}" ${i==S.oi?'selected':''}>${o}</option>`).join('')}</select>
     <label for="dst">Merg la</label><select id="dst">${DEST.map((d,i)=>`<option value="${i}" ${i==S.di?'selected':''}>${d}</option>`).join('')}</select>
     <div class="row"><span>Am abonament CTP</span><button class="sw" role="switch" aria-checked="${S.abon}" data-a="abon" aria-label="Am abonament CTP"></button></div></div>
-  <div class="card"><label>Ora (demo)</label><div class="chips">${ORE.map(([n,t])=>`<button class="chip" data-ora="${t}" aria-pressed="${S.ora===t}">${n}</button>`).join('')}</div></div>
+  <div class="card"><div class="row"><span class="small">Datele se actualizează automat, în timp real.</span><span class="small" style="font-weight:700">${fmt(oraAfisata())}${S.ora!=null?' · demo':''}</span></div></div>
   ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
   <button class="btn" data-a="cauta">Găsește poarta</button>`;
 }
@@ -204,7 +209,7 @@ function vGata(){
 async function vPorti(){
   const t = tParam();
   const [porti, f] = await Promise.all([api('/api/gates?' + t), api('/api/forecast?' + t).catch(() => null)]);
-  return `<div class="card list"><div class="row"><b>Locuri libere acum</b><span class="small">${S.ora==null?'ora reală':fmt(S.ora)}</span></div>
+  return `<div class="card list"><div class="row"><b>Locuri libere acum</b><span class="small">${fmt(oraAfisata())}${S.ora!=null?' · demo':' · live'}</span></div>
     ${porti.map(g => { const se = f && f.porti[g.id].se_umple_la; const cap = g.lucrari ? g.cap_efectiva : g.loc;
       return `<div class="g"><b>${esc(g.nume)}${g.lucrari?' <span class="small" style="color:var(--full)">· semi-închis</span>':''}</b>
       <div><div class="mini"><span style="width:${g.ocupare*100}%;background:${culoare(g.ocupare)}"></span></div>${g.lucrari?'<span class="small">lucrări la șine</span>':(se?`<span class="small">se umple ~${fmt(se)}</span>`:'')}</div>
@@ -221,7 +226,9 @@ function vEu(){
   <p class="status">Datele de mai sus rămân doar pe acest telefon.</p>`;
 }
 
+function ceasTick(){ const c = $('#clock'); if (c) c.textContent = fmt(oraAfisata()) + (S.ora!=null ? ' · demo' : ''); }
 async function deseneaza(){
+  ceasTick();
   const el = $('#ecran'), titluri = { form:'Porțile Iașului', rec:'Recomandarea ta', rez:'Rezervare', plata:'Plată', bariera:'La barieră', gata:'Drum bun!' };
   $('#inapoi').hidden = !(S.tab === 'drum' && (S.pas === 'rec' || (S.pas === 'rez' && !S.rez)));
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === S.tab));
@@ -256,7 +263,6 @@ async function confirmaRezervare(){   // ia predicția și arată rezervarea con
 document.addEventListener('click', async e => {
   const nav = e.target.closest('nav button'); if (nav) return seteaza({ tab: nav.dataset.tab });
   if (e.target.id === 'inapoi') return seteaza({ pas: S.pas === 'rez' ? 'rec' : 'form', err:'' });
-  const ch = e.target.closest('[data-ora]'); if (ch){ const v = ch.dataset.ora === 'null' ? null : +ch.dataset.ora; mem('ora', v); return seteaza({ ora: v }); }
   const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
   const a = b.dataset.a;
   try {
@@ -292,6 +298,17 @@ document.addEventListener('click', async e => {
 });
 setInterval(() => { const cd = $('#cd'); if (!cd || !S.rez) return; const r = Math.max(0, S.rezEnd - Date.now());
   cd.textContent = String(Math.floor(r/60000)).padStart(2,'0') + ':' + String(Math.floor(r/1000)%60).padStart(2,'0'); }, 1000);
+// Ceasul live și reîmprospătarea automată a datelor dependente de oră (doar în modul live).
+let ultimulMinut = oraAfisata();
+setInterval(() => {
+  ceasTick();
+  if (S.ora != null) return;                       // oră fixată pentru demo: nu reîmprospătăm
+  const m = oraLive();
+  if (m === ultimulMinut) return;                  // ora nu s-a schimbat
+  ultimulMinut = m;
+  if (S.tab === 'porti') deseneaza();              // lista porților se actualizează cu ora
+  else if (S.tab === 'drum' && S.pas === 'form') ceasTick();
+}, 20000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 deseneaza();
 </script>
