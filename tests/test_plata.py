@@ -68,6 +68,25 @@ def test_plata_dubla_si_inexistenta(client):
     assert client.post("/api/plata", json={"rezervare": "RNIMIC"}).status_code == 404
 
 
+def test_bariera_fara_card_nu_zice_card_valid(client):
+    # IS 23 OKC e în lista de abonați demo, dar dacă rezerv FĂRĂ card, bariera nu trebuie să zică „card valid”
+    rez = client.post("/api/reservations",
+                     json={"poarta": "cug", "numar": "IS 23 OKC", "t": 500, "abonament": False, "ore": 3}).json()
+    assert rez["cost"] == 15 and rez["are_card"] is False
+    client.post("/api/plata", json={"rezervare": rez["id"], "numar_card": "4111111111111111"})
+    e = client.post("/api/gate-events", json={"numar": "IS 23 OKC", "t": 510}).json()
+    assert e["abonament"] is False and e["platit"] is True
+    assert "Fără card" in e["mesaj"] and "Plătit" in e["mesaj"]
+
+
+def test_bariera_nu_se_ridica_daca_nu_e_platit(client):
+    rez = client.post("/api/reservations",
+                     json={"poarta": "dancu", "numar": "IS 60 NEP", "t": 500, "abonament": False, "ore": 4}).json()
+    assert rez["necesita_plata"] is True
+    e = client.post("/api/gate-events", json={"numar": "IS 60 NEP", "t": 510}).json()
+    assert e["permis"] is False and "neplătită" in e["mesaj"]
+
+
 def test_reset_sterge_si_plata(client):
     client.post("/api/reservations", json={"poarta": "copou", "numar": "IS 47 RST", "t": 500, "ore": 4})
     assert "rezervări" in client.post("/api/demo/reset").json()["mesaj"]

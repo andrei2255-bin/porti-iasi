@@ -329,42 +329,46 @@ def _eveniment_bariera(con, zi: date, t: int, numar: str, poarta: Optional[str],
     g = _poarta_sau_eroare(gid)
     are_rezervare = rez is not None and rez["poarta"] == gid
 
-    ab = con.execute("SELECT valabil_pana FROM abonamente_ctp WHERE numar=?", (numar,)).fetchone()
-    abonament = ab is not None and ab["valabil_pana"] >= zi.isoformat()
-
     stare = stare_porti(con, zi, t)[gid]
     if not are_rezervare and stare["libere"] <= 0:
         alt = PORTI_DUPA_ID[VECINI[gid]]
-        return {"recunoscut": True, "permis": False, "numar": numar, "poarta": gid, "abonament": abonament,
-                "tarif": 0, "mesaj": f"Parcare plină. Mergeți la P+R {alt['nume']}."}
+        return {"recunoscut": True, "permis": False, "numar": numar, "poarta": gid, "abonament": False,
+                "platit": False, "tarif": 0, "mesaj": f"Parcare plină. Mergeți la P+R {alt['nume']}."}
 
-    # Mesajul de la barieră reflectă plata făcută la rezervare (noul model: plata e în aplicație).
-    if are_rezervare and rez["platit"]:
+    # Dacă există rezervare, cardul și plata vin DIN rezervare (nu din lista de abonați).
+    # Pentru o intrare fără rezervare (walk-up), ne uităm în lista CTP.
+    if are_rezervare:
+        abonament = rez["card"] is not None
+        platit = bool(rez["platit"])
+        tarif = int(round(rez["cost"]))
         lei = f"{rez['cost']:g}".replace(".", ",")
-        tarif = int(round(rez["cost"]))
-        mesaj = "Card CTP valid. Parcare gratuită (2 ore incluse)." if rez["cost"] == 0 \
-            else f"Plătit la rezervare: {lei} lei. Bariera se ridică."
-    elif are_rezervare:
-        tarif = int(round(rez["cost"]))
-        mesaj = "Rezervare găsită, dar neplătită. Finalizează plata în aplicație."
-    elif abonament:
-        tarif = 0
-        mesaj = f"Card CTP valid. Primele {CARD_ORE_GRATIS} ore gratuite, apoi {CARD_TARIF_ORA} lei/oră."
+        if not platit and rez["cost"] > 0:    # ședere de plătit, dar neplătită: bariera nu se ridică
+            return {"recunoscut": True, "permis": False, "numar": numar, "poarta": gid, "abonament": abonament,
+                    "platit": False, "tarif": tarif,
+                    "mesaj": f"Rezervare găsită, dar neplătită ({lei} lei). Finalizează plata în aplicație."}
+        if rez["cost"] == 0 and abonament:
+            mesaj = f"Card CTP valid. Parcare gratuită ({CARD_ORE_GRATIS} ore incluse)."
+        elif abonament:
+            mesaj = f"Card CTP valid. Plătit la rezervare: {lei} lei."
+        else:
+            mesaj = f"Fără card CTP. Plătit la rezervare: {lei} lei."
     else:
-        tarif = 0
-        mesaj = f"Fără card CTP: {TARIF_FARA_CARD_ORA} lei/oră, se plătește la ieșire."
+        ab = con.execute("SELECT valabil_pana FROM abonamente_ctp WHERE numar=?", (numar,)).fetchone()
+        abonament = ab is not None and ab["valabil_pana"] >= zi.isoformat()
+        platit, tarif = False, 0
+        mesaj = (f"Card CTP valid. Primele {CARD_ORE_GRATIS} ore gratuite, apoi {CARD_TARIF_ORA} lei/oră."
+                 if abonament else f"Fără card CTP: {TARIF_FARA_CARD_ORA} lei/oră, se plătește la ieșire.")
 
     sector, loc = sector_si_loc(min(g["loc"], stare["masini"] + (0 if are_rezervare else 1)))
     con.execute(
         "INSERT INTO evenimente_bariera(poarta, numar, zi, t, tip, abonament, tarif, sector, loc, creat_la) "
         "VALUES (?,?,?,?, 'intrare', ?,?,?,?,?)",
         (gid, numar, zi.isoformat(), t, int(abonament), tarif, sector, loc, db.acum_iso()))
-    if rez is not None:
+    if are_rezervare:
         con.execute("UPDATE rezervari SET stare='folosita' WHERE id=?", (rez["id"],))
     return {"recunoscut": True, "permis": True, "numar": numar, "poarta": gid, "abonament": abonament,
             "tarif": tarif, "sector": sector, "loc": loc,
-            "rezervare": rez["id"] if are_rezervare else None,
-            "platit": bool(rez["platit"]) if are_rezervare else False, "mesaj": mesaj}
+            "rezervare": rez["id"] if are_rezervare else None, "platit": platit, "mesaj": mesaj}
 
 
 # ======================================================================

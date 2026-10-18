@@ -201,10 +201,10 @@ function vBariera(){
     <button class="btn" data-a="gata" id="gata" disabled>Spre stația CTP</button>`;
 }
 function vGata(){
-  const r = S.rec, castig = Math.max(0, r.car - r.pr), bani = Math.max(0, r.carCost - r.prCost);
+  const r = S.rec, castig = Math.max(0, r.car - r.pr), platit = S.rez ? S.rez.cost : 0;
   return `<div class="card" style="text-align:center"><span class="small">Următoarea cursă CTP spre ${esc(r.dname)}</span><div class="cd">~${r.legs.wait} min</div><span class="small">stația ${esc(r.gate.nume)} · 3 min pe jos</span></div>
-    <div class="cmp"><div><div class="t">${castig?castig+' min':'—'}</div><span class="small">mai repede decât cu mașina</span></div><div><div class="t">${bani} lei</div><span class="small">economisiți azi</span></div></div>
-    <div class="card"><span class="small">Seara, mașina te așteaptă la sector ${esc(S.intrare.sector||'-')}. La ieșire bariera se ridică singură.</span></div>
+    <div class="cmp"><div><div class="t">${castig?castig+' min':'—'}</div><span class="small">mai repede decât cu mașina</span></div><div><div class="t">${(''+r.co2).replace('.',',')} kg</div><span class="small">CO₂ evitat în centru</span></div></div>
+    <div class="card"><span class="small">${platit>0?'Ai plătit '+lei(platit)+' pentru parcare. ':'Parcare gratuită cu cardul CTP. '}Seara, mașina te așteaptă la sector ${esc(S.intrare.sector||'-')}; la ieșire bariera se ridică singură.</span></div>
     <button class="btn alt" data-a="restart">Alt drum</button>`;
 }
 async function vPorti(){
@@ -219,11 +219,11 @@ async function vPorti(){
     <button class="btn alt" data-a="refresh">Actualizează</button>`;
 }
 function vEu(){
-  const tot = S.istoric.reduce((a, x) => ({ min: a.min + x.min, lei: a.lei + x.lei, co2: a.co2 + x.co2 }), { min:0, lei:0, co2:0 });
+  const tot = S.istoric.reduce((a, x) => ({ min: a.min + (x.min||0), lei: a.lei + (x.lei||0), co2: a.co2 + (x.co2||0) }), { min:0, lei:0, co2:0 });
   return `<div class="card"><label for="plate2">Numărul mașinii mele</label><input id="plate2" class="plate" value="${esc(S.plate)}">
     <div class="row"><span>Am abonament CTP</span><button class="sw" role="switch" aria-checked="${S.abon}" data-a="abon" aria-label="Am abonament CTP"></button></div></div>
-  <div class="cmp"><div><div class="t">${S.istoric.length}</div><span class="small">drumuri prin porți</span></div><div><div class="t">${tot.lei} lei</div><span class="small">economisiți</span></div>
-    <div><div class="t">${tot.min} min</div><span class="small">câștigate</span></div><div><div class="t">${tot.co2.toFixed(1).replace('.',',')} kg</div><span class="small">CO₂ în minus</span></div></div>
+  <div class="cmp"><div><div class="t">${S.istoric.length}</div><span class="small">drumuri prin porți</span></div><div><div class="t">${tot.min} min</div><span class="small">câștigate față de mașină</span></div>
+    <div><div class="t">${tot.co2.toFixed(1).replace('.',',')} kg</div><span class="small">CO₂ evitat în centru</span></div><div><div class="t">${(''+tot.lei).replace('.',',')} lei</div><span class="small">plătiți pe parcare</span></div></div>
   <p class="status">Datele de mai sus rămân doar pe acest telefon.</p>`;
 }
 
@@ -249,6 +249,10 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'card'){ mem('cardCtp', S.cardCtp = e.target.value); S.cardStare = null; }
+});
+document.addEventListener('change', async e => {   // tab/clic în afara câmpului „card” => verifică automat
+  if (e.target.id === 'card'){ S.cardCtp = e.target.value; mem('cardCtp', S.cardCtp);
+    if (S.cardCtp.trim()){ await verificaCard(true); deseneaza(); } }
 });
 async function verificaCard(silentios){
   if (!S.cardCtp || !S.cardCtp.trim()){ S.cardStare = null; S.abon = false; return; }
@@ -292,7 +296,7 @@ document.addEventListener('click', async e => {
       seteaza({ intrare, pas:'bariera' });
       ['c1','c2','c3','c4'].forEach((id, i) => setTimeout(() => { $('#'+id)?.classList.add('ok'); if (i === 3 || (i === 2 && !intrare.sector)) { const g = $('#gata'); if (g) g.disabled = intrare.permis === false; } }, 400 + i*500)); }
     if (a === 'gata'){ const r = S.rec;
-      S.istoric.push({ min: Math.max(0, r.car - r.pr), lei: Math.max(0, r.carCost - r.prCost), co2: r.co2 }); mem('istoric', S.istoric.slice(-200));
+      S.istoric.push({ min: Math.max(0, r.car - r.pr), lei: S.rez ? S.rez.cost : 0, co2: r.co2 }); mem('istoric', S.istoric.slice(-200));
       seteaza({ pas:'gata' }); }
     if (a === 'restart') seteaza({ pas:'form', rec:null, rez:null, intrare:null });
   } catch(err){ seteaza({ err: err.message }); }
