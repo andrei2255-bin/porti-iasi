@@ -6,7 +6,9 @@ Documentație și testare endpoint-uri: http://localhost:8000/docs
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
 import threading
 import uuid
 from contextlib import asynccontextmanager
@@ -675,20 +677,29 @@ async def demo_reset(request: Request, q: QueryZi):
 # ======================================================================
 
 def _pregateste_modelul() -> None:
-    zile_noi = istoric.genereaza()            # prima pornire: simulează istoricul (câteva secunde)
-    pachet = predictie.incarca()
-    if pachet is None or zile_noi:
-        log.info("Antrenez modelul de predicție (durează câteva secunde)…")
-        predictie.antreneaza()
-    else:
-        PROGNOZATOR.seteaza(pachet)
-        log.info("Model v%d încărcat (antrenat la %s).", pachet["versiune"], pachet["antrenat_la"])
+    try:
+        zile_noi = istoric.genereaza()        # prima pornire: simulează istoricul (câteva secunde)
+        pachet = predictie.incarca()
+        if pachet is None or zile_noi:
+            log.info("Antrenez modelul de predicție (durează câteva secunde)…")
+            predictie.antreneaza()
+        else:
+            PROGNOZATOR.seteaza(pachet)
+            log.info("Model v%d încărcat (antrenat la %s).", pachet["versiune"], pachet["antrenat_la"])
+    except Exception:
+        log.exception("Pregătirea modelului a eșuat; serverul merge, prognoza devine disponibilă la reîncercare.")
 
 
 @asynccontextmanager
 async def lifespan(app: Starlette):
     db.initializeaza()
-    await run_in_threadpool(_pregateste_modelul)
+    # Modelul se pregătește ÎN FUNDAL, ca serverul să răspundă imediat (altfel Render/healthcheck
+    # crede că aplicația nu pornește). Până e gata, prognoza dă 503, iar frontendul folosește rezerva locală.
+    # În teste (PORTI_MODEL_SYNC=1) îl pregătim sincron, ca modelul să fie gata când pornește clientul.
+    if os.getenv("PORTI_MODEL_SYNC") == "1":
+        await run_in_threadpool(_pregateste_modelul)
+    else:
+        asyncio.create_task(run_in_threadpool(_pregateste_modelul))
     log.info("Porțile Iașului: server pornit. Ziua demo: %s", zi_demo())
     yield
 

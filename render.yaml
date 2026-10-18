@@ -11,4 +11,4 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.7"
       - key: PORTI_ZILE_ISTORIC
-        value: "120"
+        value: "90"

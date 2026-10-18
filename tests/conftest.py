@@ -6,6 +6,7 @@ os.environ.setdefault("PORTI_DATA_DIR", tempfile.mkdtemp(prefix="porti_test_"))
 os.environ.setdefault("PORTI_ZI_DEMO", "2026-10-19")
 os.environ.setdefault("PORTI_ZILE_ISTORIC", "60")
 os.environ.setdefault("PORTI_METEO_OFFLINE", "1")
+os.environ.setdefault("PORTI_MODEL_SYNC", "1")   # în teste, antrenează modelul la pornire (nu în fundal)
 
 import pytest  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
